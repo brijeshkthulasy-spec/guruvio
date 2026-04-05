@@ -1049,34 +1049,37 @@ async function approveReg(id) {
   const regs = getRegs();
   const reg = regs.find(r=>r.id===id);
   if(!reg) return;
+
+  // 1. Mark registration as approved in Supabase
   await sbApproveReg(id);
-  reg.status = 'approved';
-  saveRegs(regs);
-  const tutors = getTutors();
-  tutors.push({
-    id: Date.now(),
+
+  // 2. Insert new tutor into Supabase tutors table
+  await sbPost('tutors', {
     name: reg.name,
     phone: reg.phone,
     area: reg.area,
-    exp: reg.exp,
+    exp: reg.exp || null,
     age: reg.age || null,
-    qual: reg.qual || '',
-    edu: reg.edu || '',
-    bio: reg.bio || '',
-    photoUrl: reg.photoUrl || null,
-    subjects: reg.subjects,
-    classes: reg.classes,
-    rating: 0,
+    qual: reg.qual || null,
+    edu: reg.edu || null,
+    bio: reg.bio || null,
+    photo_url: reg.photoUrl || null,
+    subjects: reg.subjects || [],
+    classes: reg.classes || [],
+    av_class: reg.avClass || 'av1',
     verified: false,
-    topRated: false,
+    top_rated: false,
     active: true,
-    avatar: reg.name[0].toUpperCase(),
-    avClass: reg.avClass || 'av1'
+    rating: 0
   });
-  saveTutors(tutors);
+
+  // 3. Sync cache
+  reg.status = 'approved';
+  saveRegs(regs);
+  await syncTutors();
   renderRegTable();
   updateRegBadge();
-  toast(`${reg.name}'s profile approved and published!`);
+  toast(`${reg.name}'s profile approved and is now live!`);
 }
 
 async function rejectReg(id) {
