@@ -675,7 +675,7 @@ function doLogout() {
 }
 
 // ---- DATA ----
-function getTutorsfunction getTutors() {
+function getTutors() {
   const s = localStorage.getItem('guruvio_tutors');
   if (!s) { localStorage.setItem('guruvio_tutors', JSON.stringify(DEFAULT_TUTORS)); return DEFAULT_TUTORS; }
   return JSON.parse(s);
