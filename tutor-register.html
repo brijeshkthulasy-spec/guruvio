@@ -212,6 +212,9 @@
 </div>
 
 <script>
+
+const SUPA_URL = 'https://lmqsoxrnxrktzosmwkwd.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI';
 let uploadedPhotoUrl = null;
 
 function handlePhotoUpload(input) {
@@ -226,7 +229,7 @@ function handlePhotoUpload(input) {
   reader.readAsDataURL(file);
 }
 
-function submitRegistration() {
+async function submitRegistration() {
   const name  = document.getElementById('r-name').value.trim();
   const phone = document.getElementById('r-phone').value.trim();
   const area  = document.getElementById('r-area').value;
@@ -256,9 +259,19 @@ function submitRegistration() {
     avClass: ['av1','av2','av3','av4','av5','av6','av7','av8'][Math.floor(Math.random()*8)]
   };
 
-  const regs = JSON.parse(localStorage.getItem('guruvio_registrations') || '[]');
-  regs.push(reg);
-  localStorage.setItem('guruvio_registrations', JSON.stringify(regs));
+  const row = {
+    name: reg.name, phone: reg.phone, email: reg.email || null,
+    area: reg.area, exp: reg.exp, age: reg.age || null,
+    qual: reg.qual, edu: reg.edu || null, bio: reg.bio || null,
+    photo_url: reg.photoUrl || null,
+    subjects: reg.subjects, classes: reg.classes,
+    av_class: reg.avClass, status: 'pending'
+  };
+  await fetch(`${SUPA_URL}/rest/v1/registrations`, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify(row)
+  });
 
   document.getElementById('reg-form').style.display = 'none';
   document.getElementById('success-box').style.display = 'block';

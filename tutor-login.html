@@ -509,30 +509,68 @@
 <div class="toast" id="toast"></div>
 
 <script>
+const SUPA_URL = 'https://lmqsoxrnxrktzosmwkwd.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI';
+const SH = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
+
+async function sbGetTutor(phone) {
+  const clean = String(phone).replace(/\D/g,'').replace(/^0/,'');
+  const p = clean.length === 10 ? '91'+clean : clean;
+  const r = await fetch(`${SUPA_URL}/rest/v1/tutors?phone=eq.${p}`, { headers: SH });
+  const data = await r.json();
+  return data.length ? data[0] : null;
+}
+
+async function sbUpdateTutor(id, row) {
+  await fetch(`${SUPA_URL}/rest/v1/tutors?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: { ...SH, 'Prefer': 'return=minimal' },
+    body: JSON.stringify(row)
+  });
+}
+
+async function sbGetViews(tutorId) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/profile_views?tutor_id=eq.${tutorId}`, { headers: SH });
+  return r.ok ? r.json() : [];
+}
+async function sbGetContacts(tutorId) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/contacts?tutor_id=eq.${tutorId}`, { headers: SH });
+  return r.ok ? r.json() : [];
+}
+
 // ---- DATA ----
 function getTutors() {
-  const s = localStorage.getItem('guruvio_tutors');
+  const s = localStorage.getItem('guruvio_tutors_cache');
   return s ? JSON.parse(s) : [];
 }
-function saveTutors(t) { localStorage.setItem('guruvio_tutors', JSON.stringify(t)); }
-function getViews() { return JSON.parse(localStorage.getItem('guruvio_profile_views') || '[]'); }
-function getContacts() { return JSON.parse(localStorage.getItem('guruvio_contacts') || '[]'); }
+function saveTutors(t) { localStorage.setItem('guruvio_tutors_cache', JSON.stringify(t)); }
+async function getViews() { return currentTutor ? sbGetViews(currentTutor.id) : []; }
+async function getContacts() { return currentTutor ? sbGetContacts(currentTutor.id) : []; }
 
 let currentTutor = null;
 
 // ---- AUTH ----
-function doLogin() {
+async function doLogin() {
   const phone = document.getElementById('login-phone').value.trim();
   const pass  = document.getElementById('login-pass').value;
-  const tutors = getTutors();
-  const tutor = tutors.find(t => t.phone === phone);
-  if (!tutor) { showErr('No tutor found with this WhatsApp number.'); return; }
+  const raw = await sbGetTutor(phone);
+  if (!raw) { showErr('No tutor found with this WhatsApp number.'); return; }
+  const tutor = {
+    id: raw.id, name: raw.name, phone: raw.phone, area: raw.area,
+    subjects: raw.subjects || [], classes: raw.classes || [],
+    exp: raw.exp || '', age: raw.age, qual: raw.qual || '', edu: raw.edu || '',
+    bio: raw.bio || '', photoUrl: raw.photo_url, avClass: raw.av_class || 'av1',
+    verified: raw.verified, active: raw.active, rating: raw.rating || 0,
+    avatar: (raw.name||'T')[0].toUpperCase()
+  };
   const storedPass = localStorage.getItem('tutor_pass_' + tutor.id);
-  // First time login — if no password set, use last 4 digits of phone
-  const defaultPass = phone.slice(-4);
-  const validPass = storedPass || defaultPass;
-  if (pass !== validPass) { showErr('Incorrect password. Default is last 4 digits of your number.'); return; }
+  const defaultPass = String(phone).replace(/\D/g,'').slice(-4);
+  if (pass !== (storedPass || defaultPass)) { showErr('Incorrect password. Default is last 4 digits of your number.'); return; }
   currentTutor = tutor;
+  const cache = getTutors();
+  const idx = cache.findIndex(t=>t.id===tutor.id);
+  if(idx>=0) cache[idx]=tutor; else cache.push(tutor);
+  saveTutors(cache);
   sessionStorage.setItem('guruvio_tutor_id', tutor.id);
   showDashboard(tutor);
 }
@@ -568,15 +606,14 @@ function showDashboard(tutor) {
   loadEditForm(tutor);
   loadOptimise(tutor);
   renderViewsChart(tutor);
-  renderClicksChart(tutor);
+  renderClicksChart(tutor);  // async, fire and forget
 }
 
 // ---- STATS ----
-function loadStats(tutor) {
-  const views    = getViews().filter(v => v.tutorId === tutor.id);
-  const clicks   = getContacts().filter(c => c.tutorId === tutor.id);
-  const weekAgo  = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
-  const weekViews = views.filter(v => new Date(v.time) >= weekAgo);
+async function loadStats(tutor) {
+  const [views, clicks] = await Promise.all([sbGetViews(tutor.id), sbGetContacts(tutor.id)]);
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+  const weekViews = views.filter(v => new Date(v.viewed_at || v.time) >= weekAgo);
   document.getElementById('stat-views').textContent  = views.length;
   document.getElementById('stat-clicks').textContent = clicks.length;
   document.getElementById('stat-week').textContent   = weekViews.length;
@@ -585,13 +622,13 @@ function loadStats(tutor) {
 }
 
 // ---- CHARTS ----
-function renderViewsChart(tutor) {
-  const views = getViews().filter(v => v.tutorId === tutor.id);
-  renderDayChart('views-chart', views, false);
+async function renderViewsChart(tutor) {
+  const views = await sbGetViews(tutor.id);
+  renderDayChart('views-chart', views.map(v=>({time:v.viewed_at||v.time})), false);
 }
-function renderClicksChart(tutor) {
-  const clicks = getContacts().filter(c => c.tutorId === tutor.id);
-  renderDayChart('clicks-chart', clicks, true);
+async function renderClicksChart(tutor) {
+  const clicks = await sbGetContacts(tutor.id);
+  renderDayChart('clicks-chart', clicks.map(c=>({time:c.contacted_at||c.time})), true);
 }
 function renderDayChart(elId, data, isTeal) {
   const days = {};
@@ -647,7 +684,7 @@ function loadEditForm(tutor) {
   document.querySelectorAll('[id^=ec]').forEach(c => { c.checked = (tutor.classes||[]).includes(c.value); });
 }
 
-function saveProfile() {
+async function saveProfile() {
   const tutors = getTutors();
   const idx = tutors.findIndex(t => t.id === currentTutor.id);
   if (idx === -1) { toast('Error: tutor not found.'); return; }
@@ -672,6 +709,14 @@ function saveProfile() {
     classes:  [...document.querySelectorAll('[id^=ec]:checked')].map(c => c.value),
     avatar:   (document.getElementById('e-name').value.trim() || tutors[idx].name)[0].toUpperCase(),
   };
+  const row = {
+    name: tutors[idx].name, phone: tutors[idx].phone, area: tutors[idx].area,
+    subjects: tutors[idx].subjects, classes: tutors[idx].classes,
+    exp: tutors[idx].exp, age: tutors[idx].age || null,
+    qual: tutors[idx].qual, edu: tutors[idx].edu, bio: tutors[idx].bio,
+    photo_url: tutors[idx].photoUrl || null, av_class: tutors[idx].avClass
+  };
+  await sbUpdateTutor(tutors[idx].id, row);
   saveTutors(tutors);
   currentTutor = tutors[idx];
   document.getElementById('dash-name').textContent = currentTutor.name;
@@ -738,7 +783,7 @@ window.addEventListener('load', () => {
   const savedId = sessionStorage.getItem('guruvio_tutor_id');
   if (savedId) {
     const tutors = getTutors();
-    const tutor = tutors.find(t => t.id == savedId);
+    const tutor = tutors.find(t => String(t.id) === String(savedId));
     if (tutor) { currentTutor = tutor; showDashboard(tutor); }
   }
 });

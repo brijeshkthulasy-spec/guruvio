@@ -433,21 +433,16 @@
   /* ---- MOBILE FIRST ---- */
   @media(max-width:768px) {
     /* Nav */
-    nav { padding:14px 18px; gap:10px; }
+    nav { padding:12px 16px; gap:8px; flex-wrap:wrap; }
     .nav-link { display:none; }
-    .nav-right { gap:8px; }
-    .nav-cta { padding:8px 14px; font-size:13px; white-space:nowrap; }
-    .nav-tutor-login { padding:8px 14px; font-size:13px; white-space:nowrap; }
+    .nav-right { gap:7px; flex-wrap:nowrap; }
+    .nav-cta { padding:8px 12px; font-size:12px; white-space:nowrap; }
+    .nav-tutor-login { padding:8px 12px; font-size:12px; white-space:nowrap; }
 
     /* Hero */
     .hero { padding:100px 18px 48px; min-height:auto; }
-    .hero h1 { font-size:clamp(36px,10vw,52px); letter-spacing:-1px; }
+    .hero h1 { font-size:clamp(32px,9vw,48px); letter-spacing:-1px; }
     .hero p { font-size:15px; margin-top:16px; }
-    .hero-actions { margin-top:28px; }
-    .btn-primary { width:100%; justify-content:center; padding:15px 24px; font-size:15px; }
-    .hero-stats { gap:16px; margin-top:40px; flex-wrap:wrap; justify-content:center; }
-    .stat-num { font-size:26px; }
-    .stat-label { font-size:12px; }
 
     /* Filters */
     .tutors-section { padding:48px 18px; }
@@ -479,10 +474,10 @@
     .section-title { font-size:clamp(24px,6vw,32px); margin-bottom:28px; }
   }
 
-  @media(max-width:400px) {
-    .nav-cta { padding:7px 10px; font-size:12px; }
-    .nav-tutor-login { display:none; }
-    .hero h1 { font-size:32px; }
+  @media(max-width:380px) {
+    .nav-cta { padding:7px 9px; font-size:11px; }
+    .nav-tutor-login { padding:7px 9px; font-size:11px; }
+    .logo { font-size:20px; }
   }
 </style>
 </head>
@@ -613,163 +608,69 @@
 </footer>
 
 <script>
-// ---- DATA LAYER ----
-// Tutors stored in localStorage (seeded with defaults if empty)
-const DEFAULT_TUTORS = [
-  { id:1, name:"Arjun Menon", exp:"8 years", subjects:["Mathematics","Physics"], classes:["Class 9–10","Plus One","Plus Two"], area:"Pattom", rating:4.9, phone:"919400000001", verified:true, topRated:true, active:true, avatar:"A", avClass:"av1" },
-  { id:2, name:"Priya Nair", exp:"5 years", subjects:["English","Social Science"], classes:["Class 6–8","Class 9–10"], area:"Kowdiar", rating:4.8, phone:"919400000002", verified:true, topRated:false, active:true, avatar:"P", avClass:"av2" },
-  { id:3, name:"Rahul Krishnan", exp:"10 years", subjects:["Chemistry","Biology"], classes:["Plus One","Plus Two"], area:"Kazhakuttam", rating:5.0, phone:"919400000003", verified:true, topRated:true, active:true, avatar:"R", avClass:"av3" },
-  { id:4, name:"Sreelakshmi V", exp:"6 years", subjects:["Malayalam","Hindi"], classes:["Class 1–5","Class 6–8"], area:"Sasthamangalam", rating:4.7, phone:"919400000004", verified:true, topRated:false, active:true, avatar:"S", avClass:"av4" },
-  { id:5, name:"Vineeth Kumar", exp:"4 years", subjects:["Computer Science","Mathematics"], classes:["Plus One","Plus Two"], area:"Nemom", rating:4.8, phone:"919400000005", verified:true, topRated:false, active:true, avatar:"V", avClass:"av5" },
-  { id:6, name:"Asha Pillai", exp:"12 years", subjects:["Physics","Chemistry"], classes:["Class 9–10","Plus One","Plus Two"], area:"Vanchiyoor", rating:4.9, phone:"919400000006", verified:true, topRated:true, active:true, avatar:"A", avClass:"av6" },
-  { id:7, name:"Deepak Raj", exp:"3 years", subjects:["Mathematics","Accountancy"], classes:["Plus One","Plus Two","Degree"], area:"Peroorkada", rating:4.6, phone:"919400000007", verified:true, topRated:false, active:true, avatar:"D", avClass:"av7" },
-  { id:8, name:"Lekha Suresh", exp:"7 years", subjects:["Biology","Chemistry"], classes:["Class 9–10","Plus One"], area:"Ulloor", rating:4.8, phone:"919400000008", verified:true, topRated:false, active:true, avatar:"L", avClass:"av8" },
-];
+// ---- SUPABASE CONFIG ----
+const SUPA_URL = 'https://lmqsoxrnxrktzosmwkwd.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI';
+const H = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
 
-function getTutors() {
-  const stored = localStorage.getItem('guruvio_tutors');
-  if (!stored) { localStorage.setItem('guruvio_tutors', JSON.stringify(DEFAULT_TUTORS)); return DEFAULT_TUTORS; }
-  return JSON.parse(stored);
+async function sbGet(path) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: H });
+    return r.ok ? r.json() : [];
+  } catch { return []; }
+}
+async function sbPost(table, data) {
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+      method: 'POST', headers: { ...H, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(data)
+    });
+  } catch {}
 }
 
-function logVisit() {
-  const visits = JSON.parse(localStorage.getItem('guruvio_visits') || '[]');
-  visits.push({ time: new Date().toISOString(), page: 'home' });
-  if (visits.length > 500) visits.shift();
-  localStorage.setItem('guruvio_visits', JSON.stringify(visits));
+let _tutorCache = [];
+
+async function loadTutors() {
+  const data = await sbGet('tutors?active=eq.true&order=id.asc');
+  _tutorCache = data.map(t => ({
+    id: t.id, name: t.name, phone: t.phone, area: t.area,
+    subjects: t.subjects || [], classes: t.classes || [],
+    exp: t.exp || '—', age: t.age, qual: t.qual, edu: t.edu,
+    bio: t.bio, photoUrl: t.photo_url,
+    verified: t.verified, active: t.active, rating: t.rating || 0,
+    avatar: (t.name || 'T')[0].toUpperCase(), avClass: t.av_class || 'av1'
+  }));
+  return _tutorCache;
 }
 
-function logContact(tutorId) {
-  const contacts = JSON.parse(localStorage.getItem('guruvio_contacts') || '[]');
-  contacts.push({ time: new Date().toISOString(), tutorId });
-  localStorage.setItem('guruvio_contacts', JSON.stringify(contacts));
-  // Also log as profile view
-  logProfileView(tutorId);
-}
-
-function logProfileView(tutorId) {
-  const views = JSON.parse(localStorage.getItem('guruvio_profile_views') || '[]');
-  views.push({ time: new Date().toISOString(), tutorId });
-  if (views.length > 2000) views.shift();
-  localStorage.setItem('guruvio_profile_views', JSON.stringify(views));
-}
-
-// ---- RENDER ----
-function waIcon() {
-  return `<svg class="wa-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.549 4.122 1.512 5.862L.057 23.428a.5.5 0 0 0 .614.614l5.566-1.455A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.946a9.94 9.94 0 0 1-5.073-1.39l-.364-.215-3.773.988.988-3.774-.215-.364A9.94 9.94 0 0 1 2.054 12C2.054 6.497 6.497 2.054 12 2.054S21.946 6.497 21.946 12 17.503 21.946 12 21.946z"/></svg>`;
-}
-
-function renderCard(t) {
-  const avatarHtml = t.photoUrl
-    ? `<div class="avatar ${t.avClass}"><img src="${t.photoUrl}" alt="${t.name}"></div>`
-    : `<div class="avatar ${t.avClass}">${t.avatar}</div>`;
-  return `
-  <div class="tutor-card visible" data-id="${t.id}" data-name="${t.name}" data-subjects="${t.subjects.join(',')}" data-area="${t.area}" data-classes="${t.classes.join(',')}">
-    <div class="card-top">
-      ${avatarHtml}
-      <div><div class="tutor-name">${t.name}</div><div class="tutor-exp">${t.exp} experience</div></div>
-    </div>
-    <div class="badges">
-      ${t.verified ? '<span class="badge bv">✓ Verified</span>' : ''}
-      ${t.active ? '<span class="badge ba">● Active</span>' : ''}
-    </div>
-    <div class="subjects">
-      ${t.subjects.map(s=>`<span class="stag">${s}</span>`).join('')}
-      ${t.classes.slice(0,2).map(c=>`<span class="stag">${c}</span>`).join('')}
-    </div>
-    <div class="card-footer">
-      <div class="tutor-meta"><strong>${t.area}</strong> · Home visits</div>
-    </div>
-    <button class="view-profile-btn" onclick="openProfile('${t.id}')">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      View Full Profile
-    </button>
-    <a href="https://wa.me/${t.phone}?text=${encodeURIComponent(`Hello ${t.name}, I found your profile on Guruvio. I need a tutor for my child and your profile looks great. Can we talk about availability and charges?`)}" class="wa-btn" target="_blank" onclick="logContact(${t.id})">
-      ${waIcon()} Connect on WhatsApp
-    </a>
-  </div>`;
-}
-
-function renderTutors(tutors) {
-  const grid = document.getElementById('tutors-grid');
-  const noRes = document.getElementById('no-results');
-  const visible = tutors.filter(t => t.active);
-  grid.innerHTML = visible.length
-    ? visible.map(renderCard).join('') + noRes.outerHTML
-    : noRes.outerHTML;
-  document.getElementById('no-results').style.display = visible.length ? 'none' : 'block';
-  // Observe cards for view tracking
-  document.querySelectorAll('.tutor-card[data-id]').forEach(el => cardObserver.observe(el));
-}
-
-function onFilterChange(pillId, sel) {
-  const pill = document.getElementById(pillId);
-  if (sel.value) pill.classList.add('active');
-  else pill.classList.remove('active');
-}
-
-function clearFilter(selectId, pillId) {
-  const sel = document.getElementById(selectId);
-  sel.value = '';
-  document.getElementById(pillId).classList.remove('active');
-  filterTutors();
-}
-
-function filterTutors() {
-  const subj = document.getElementById('filter-subject').value;
-  const area = document.getElementById('filter-area').value;
-  const cls  = document.getElementById('filter-class').value;
-  const all = getTutors();
-  const filtered = all.filter(t => {
-    if (!t.active) return false;
-    if (subj && !t.subjects.includes(subj)) return false;
-    if (area && t.area !== area) return false;
-    if (cls  && !t.classes.includes(cls)) return false;
-    return true;
-  });
-  renderTutors(filtered);
-}
-
-// Scroll reveal
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
-}, { threshold: 0.08 });
-document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
-
-// Track tutor card views
-const cardObserver = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      const id = e.target.dataset.id;
-      if (id) logProfileView(parseInt(id));
-      cardObserver.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.5 });
+function logVisit() { sbPost('visits', { page: 'home' }); }
+function logContact(tutorId) { sbPost('contacts', { tutor_id: tutorId }); }
+function logProfileView(tutorId) { sbPost('profile_views', { tutor_id: tutorId }); }
 
 // ---- REVIEWS ----
 let currentReviewTutorId = null;
 let selectedRating = 0;
 
-function getApprovedReviews(tutorId) {
-  const all = JSON.parse(localStorage.getItem('guruvio_reviews') || '[]');
-  return all.filter(r => r.tutorId == tutorId && r.status === 'approved');
+async function getApprovedReviews(tutorId) {
+  return sbGet(`reviews?tutor_id=eq.${tutorId}&status=eq.approved&order=created_at.desc`);
 }
 
 // ---- PROFILE MODAL ----
 const WA_SVG = `<svg style="width:18px;height:18px;fill:#fff;flex-shrink:0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.549 4.122 1.512 5.862L.057 23.428a.5.5 0 0 0 .614.614l5.566-1.455A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.946a9.94 9.94 0 0 1-5.073-1.39l-.364-.215-3.773.988.988-3.774-.215-.364A9.94 9.94 0 0 1 2.054 12C2.054 6.497 6.497 2.054 12 2.054S21.946 6.497 21.946 12 17.503 21.946 12 21.946z"/></svg>`;
 
-function openProfile(id) {
-  const tutors = getTutors();
-  const t = tutors.find(x => x.id == id);
+async function openProfile(id) {
+  const t = _tutorCache.find(x => x.id == id);
   if (!t) return;
   logProfileView(t.id);
   currentReviewTutorId = t.id;
   selectedRating = 0;
 
   // Approved reviews for this tutor
-  const reviews = JSON.parse(localStorage.getItem('guruvio_reviews') || '[]')
-    .filter(r => r.tutorId == t.id && r.status === 'approved');
+  const reviews = await getApprovedReviews(t.id);
+  const mappedReviews = reviews.map(r => ({
+    name: r.reviewer_name, text: r.review_text,
+    rating: r.rating, date: r.created_at
+  }));
 
   // Avatar / photo
   const photoHtml = t.photoUrl
@@ -800,9 +701,9 @@ function openProfile(id) {
   ).join('');
 
   // Reviews HTML
-  const reviewsHtml = reviews.length
-    ? reviews.map(r => `
-      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+  const reviewsHtml = mappedReviews.length
+    ? mappedReviews.map(r => `
+      <div style="background:rgba(255,255,255,0.03);"border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
           <span style="font-size:13px;font-weight:600;color:#f7f4ee">${r.name}</span>
           <span style="color:#f5a623;font-size:12px">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
@@ -879,7 +780,7 @@ function openProfile(id) {
 
     <!-- WhatsApp CTA -->
     <div style="padding:18px 18px 0">
-      <a href="https://wa.me/${t.phone}?text=${encodeURIComponent(`Hello ${t.name}, I found your profile on Guruvio. I need a tutor for my child and your profile looks great. Can we talk about availability and charges?`)}" target="_blank" onclick="logContact(${t.id})"
+      <a href="${waLink(t.phone, t.name)}" target="_blank" onclick="logContact(${t.id})"
         style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;border:none;border-radius:12px;padding:14px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;width:100%;box-sizing:border-box">
         ${WA_SVG} Connect on WhatsApp
       </a>
@@ -928,22 +829,23 @@ function mSetRating(n) {
   document.querySelectorAll('#m-stars span').forEach((s,i) => s.classList.toggle('on', i < n));
 }
 
-function mSubmitReview(tutorId) {
+async function mSubmitReview(tutorId) {
   const name = (document.getElementById('m-rname').value || '').trim();
   const text = (document.getElementById('m-rtext').value || '').trim();
   if (!mRating) { alert('Please select a star rating.'); return; }
   if (!name)    { alert('Please enter your name.'); return; }
   if (!text)    { alert('Please write your review.'); return; }
-  const all = JSON.parse(localStorage.getItem('guruvio_reviews') || '[]');
-  all.push({ id:Date.now(), tutorId, name, text, rating:mRating, date:new Date().toISOString(), status:'pending' });
-  localStorage.setItem('guruvio_reviews', JSON.stringify(all));
+  await sbPost('reviews', { tutor_id: tutorId, reviewer_name: name, review_text: text, rating: mRating });
   document.getElementById('m-review-form').style.display = 'none';
   document.getElementById('m-review-done').style.display = 'block';
 }
 
 // Init
 logVisit();
-renderTutors(getTutors());
+(async () => {
+  const tutors = await loadTutors();
+  renderTutors(tutors);
+})();
 </script>
 </body>
 </html>

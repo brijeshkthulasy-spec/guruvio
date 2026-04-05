@@ -558,6 +558,103 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ---- SUPABASE CONFIG ----
+const SUPA_URL = 'https://lmqsoxrnxrktzosmwkwd.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI';
+const H = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
+
+async function sbFetch(path, opts = {}) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+    headers: { ...H, 'Prefer': opts.prefer || 'return=representation', ...(opts.headers||{}) },
+    ...opts
+  });
+  const t = await r.text();
+  return t ? JSON.parse(t) : [];
+}
+async function sbGet(path) { return sbFetch(path); }
+async function sbPost(table, data) { return sbFetch(table, { method:'POST', body:JSON.stringify(data) }); }
+async function sbPatch(table, query, data) { return sbFetch(`${table}?${query}`, { method:'PATCH', prefer:'return=minimal', body:JSON.stringify(data) }); }
+async function sbDelete(table, query) { return sbFetch(`${table}?${query}`, { method:'DELETE', prefer:'return=minimal' }); }
+
+function getTutors() { return JSON.parse(localStorage.getItem('guruvio_tutors') || '[]'); }
+function saveTutors(t) { localStorage.setItem('guruvio_tutors', JSON.stringify(t)); }
+function getRegs() { return JSON.parse(localStorage.getItem('guruvio_registrations') || '[]'); }
+function saveRegs(r) { localStorage.setItem('guruvio_registrations', JSON.stringify(r)); }
+function getReviews() { return JSON.parse(localStorage.getItem('guruvio_reviews') || '[]'); }
+function saveReviews(r) { localStorage.setItem('guruvio_reviews', JSON.stringify(r)); }
+function getVisits() { return []; }
+function getContacts() { return []; }
+
+// Load tutors from Supabase into localStorage cache for admin use
+async function syncTutors() {
+  const data = await sbGet('tutors?order=id.asc');
+  const mapped = data.map(t => ({
+    id: t.id, name: t.name, phone: t.phone, area: t.area,
+    subjects: t.subjects || [], classes: t.classes || [],
+    exp: t.exp || '', age: t.age, qual: t.qual || '', edu: t.edu || '',
+    bio: t.bio || '', photoUrl: t.photo_url, avClass: t.av_class || 'av1',
+    verified: t.verified, topRated: t.top_rated, active: t.active,
+    rating: t.rating || 0, avatar: (t.name||'T')[0].toUpperCase()
+  }));
+  localStorage.setItem('guruvio_tutors', JSON.stringify(mapped));
+  return mapped;
+}
+
+async function syncRegistrations() {
+  const data = await sbGet('registrations?order=submitted_at.desc');
+  const mapped = data.map(r => ({
+    id: r.id, name: r.name, phone: r.phone, area: r.area,
+    subjects: r.subjects || [], classes: r.classes || [],
+    exp: r.exp || '', age: r.age, qual: r.qual || '', edu: r.edu || '',
+    bio: r.bio || '', photoUrl: r.photo_url, avClass: r.av_class || 'av1',
+    status: r.status, submittedAt: r.submitted_at
+  }));
+  localStorage.setItem('guruvio_registrations', JSON.stringify(mapped));
+  return mapped;
+}
+
+async function syncReviews() {
+  const data = await sbGet('reviews?order=created_at.desc');
+  const mapped = data.map(r => ({
+    id: r.id, tutorId: r.tutor_id, name: r.reviewer_name,
+    text: r.review_text, rating: r.rating, status: r.status,
+    date: r.created_at
+  }));
+  localStorage.setItem('guruvio_reviews', JSON.stringify(mapped));
+  return mapped;
+}
+
+// Supabase-backed CRUD for tutors
+async function sbSaveTutor(obj) {
+  const row = {
+    name: obj.name, phone: obj.phone, area: obj.area,
+    subjects: obj.subjects, classes: obj.classes,
+    exp: obj.exp, age: obj.age || null, qual: obj.qual,
+    edu: obj.edu, bio: obj.bio, photo_url: obj.photoUrl || null,
+    av_class: obj.avClass, verified: obj.verified,
+    top_rated: obj.topRated, active: obj.active, rating: obj.rating || 0
+  };
+  if (obj._isNew) {
+    return sbPost('tutors', row);
+  } else {
+    return sbPatch('tutors', `id=eq.${obj.id}`, row);
+  }
+}
+
+async function sbDeleteTutor(id) { return sbDelete('tutors', `id=eq.${id}`); }
+
+async function sbApproveReg(id) {
+  return sbPatch('registrations', `id=eq.${id}`, { status: 'approved' });
+}
+async function sbRejectReg(id) {
+  return sbPatch('registrations', `id=eq.${id}`, { status: 'rejected' });
+}
+async function sbApproveReview(id) { return sbPatch('reviews', `id=eq.${id}`, { status: 'approved' }); }
+async function sbRejectReview(id) { return sbPatch('reviews', `id=eq.${id}`, { status: 'rejected' }); }
+
+async function sbGetVisits() { return sbGet('visits?order=visited_at.desc'); }
+async function sbGetContacts() { return sbGet('contacts?order=contacted_at.desc'); }
+async function sbGetProfileViews() { return sbGet('profile_views?order=viewed_at.desc'); }
 // ---- AUTH ----
 let ADMIN_USER = localStorage.getItem('guruvio_admin_user') || 'admin';
 let ADMIN_PASS = localStorage.getItem('guruvio_admin_pass') || 'guruvio123';
@@ -781,7 +878,7 @@ function openEditTutor(id) {
 
 function closeModal() { document.getElementById('tutor-modal').classList.remove('open'); }
 
-function saveTutor() {
+async function saveTutor() {
   const name = document.getElementById('m-name').value.trim();
   const phone = document.getElementById('m-phone').value.trim();
   const area = document.getElementById('m-area').value;
@@ -809,9 +906,12 @@ function saveTutor() {
     avClass: document.getElementById('m-avclass').value,
     avatar: name[0].toUpperCase()
   };
+  const supaObj = { ...obj, _isNew: !id };
+  await sbSaveTutor(supaObj);
+  await syncTutors();
   if(id) {
     const idx = tutors.findIndex(t=>t.id===parseInt(id));
-    tutors[idx] = obj;
+    if(idx>=0) tutors[idx] = obj;
   } else {
     tutors.push(obj);
   }
@@ -821,10 +921,10 @@ function saveTutor() {
   toast('Tutor profile saved successfully!');
 }
 
-function deleteTutor(id) {
+async function deleteTutor(id) {
   if(!confirm('Delete this tutor profile?')) return;
-  const tutors = getTutors().filter(t=>t.id!==id);
-  saveTutors(tutors);
+  await sbDeleteTutor(id);
+  await syncTutors();
   renderTutorTable();
   toast('Tutor deleted.');
 }
@@ -879,10 +979,11 @@ function renderReviewsGrid(reviews) {
   }).join('');
 }
 
-function approveReview(id) {
+async function approveReview(id) {
   const reviews = getReviews();
   const r = reviews.find(x => x.id === id);
   if (!r) return;
+  await sbApproveReview(id);
   r.status = 'approved';
   saveReviews(reviews);
   // Recalculate tutor rating from approved reviews
@@ -892,10 +993,11 @@ function approveReview(id) {
   toast('Review approved and published!');
 }
 
-function rejectReview(id) {
+async function rejectReview(id) {
   const reviews = getReviews();
   const r = reviews.find(x => x.id === id);
   if (!r) return;
+  await sbRejectReview(id);
   r.status = 'rejected';
   saveReviews(reviews);
   updateTutorRating(r.tutorId);
@@ -943,10 +1045,11 @@ function renderRegTable() {
   }).join('');
 }
 
-function approveReg(id) {
+async function approveReg(id) {
   const regs = getRegs();
   const reg = regs.find(r=>r.id===id);
   if(!reg) return;
+  await sbApproveReg(id);
   reg.status = 'approved';
   saveRegs(regs);
   const tutors = getTutors();
@@ -976,8 +1079,9 @@ function approveReg(id) {
   toast(`${reg.name}'s profile approved and published!`);
 }
 
-function rejectReg(id) {
+async function rejectReg(id) {
   if(!confirm('Reject this application?')) return;
+  await sbRejectReg(id);
   const regs = getRegs();
   const reg = regs.find(r=>r.id===id);
   if(reg) reg.status = 'rejected';
@@ -988,15 +1092,16 @@ function rejectReg(id) {
 }
 
 // ---- TRAFFIC ----
-function renderTraffic() {
-  const visits = getVisits();
-  const contacts = getContacts();
+async function renderTraffic() {
+  const [visits, contacts] = await Promise.all([sbGetVisits(), sbGetContacts()]);
+  const visits_mapped = visits.map(v=>({time:v.visited_at}));
+  const contacts_mapped = contacts.map(c=>({time:c.contacted_at, tutorId:c.tutor_id}));
   const today = new Date().toISOString().split('T')[0];
   const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
-  document.getElementById('t-today').textContent = visits.filter(v=>v.time.startsWith(today)).length;
-  document.getElementById('t-week').textContent = visits.filter(v=>new Date(v.time)>=weekAgo).length;
-  document.getElementById('t-total').textContent = visits.length;
-  document.getElementById('t-contacts').textContent = contacts.length;
+  document.getElementById('t-today').textContent = visits_mapped.filter(v=>v.time.startsWith(today)).length;
+  document.getElementById('t-week').textContent = visits_mapped.filter(v=>new Date(v.time)>=weekAgo).length;
+  document.getElementById('t-total').textContent = visits_mapped.length;
+  document.getElementById('t-contacts').textContent = contacts_mapped.length;
   // 14 day chart
   const days = {};
   for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days[d.toISOString().split('T')[0]]=0;}
@@ -1051,7 +1156,9 @@ function toggleFeature(btn) {
 }
 
 // ---- INIT ----
-function initAdmin() {
+async function initAdmin() {
+  toast('Loading data from Supabase...');
+  await Promise.all([syncTutors(), syncRegistrations(), syncReviews()]);
   renderDashboard();
   updateRegBadge();
   updateReviewBadge();
