@@ -366,6 +366,7 @@
           <h3>All Tutors</h3>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <input type="text" class="search-input" placeholder="Search tutors..." oninput="filterTutorTable(this.value)">
+            <button class="action-btn" onclick="renderTutorTable()" style="border-color:var(--muted);color:var(--muted)">↻ Refresh</button>
             <button class="action-btn" style="border-color:var(--accent);color:var(--accent)" onclick="openAddTutor()">+ Add Tutor</button>
           </div>
         </div>
@@ -378,7 +379,12 @@
 
     <!-- REGISTRATIONS -->
     <div class="page" id="page-registrations">
-      <div class="page-header"><h1>Registrations</h1><p>Tutor applications awaiting review</p></div>
+      <div class="page-header">
+        <h1>Registrations</h1>
+        <p>Tutor applications awaiting review
+          <button onclick="renderRegTable()" style="margin-left:12px;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:8px;padding:4px 12px;font-size:12px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif" onmouseover="this.style.color='var(--light)'" onmouseout="this.style.color='var(--muted)'">↻ Refresh</button>
+        </p>
+      </div>
       <div class="table-wrap">
         <div class="table-header"><h3>Applications</h3></div>
         <table>
@@ -564,12 +570,21 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const H = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
 
 async function sbFetch(path, opts = {}) {
-  const r = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
-    headers: { ...H, 'Prefer': opts.prefer || 'return=representation', ...(opts.headers||{}) },
-    ...opts
-  });
-  const t = await r.text();
-  return t ? JSON.parse(t) : [];
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+      headers: { ...H, 'Prefer': opts.prefer || 'return=representation', ...(opts.headers||{}) },
+      ...opts
+    });
+    const text = await r.text();
+    if (!r.ok) {
+      console.error('Supabase error:', r.status, text);
+      return [];
+    }
+    return text ? JSON.parse(text) : [];
+  } catch(e) {
+    console.error('Supabase fetch failed:', e);
+    return [];
+  }
 }
 async function sbGet(path) { return sbFetch(path); }
 async function sbPost(table, data) { return sbFetch(table, { method:'POST', body:JSON.stringify(data) }); }
@@ -1115,34 +1130,36 @@ function updateRegBadge() {
 async function renderRegTable() {
   const tbody = document.getElementById('reg-tbody');
 
-  // Show cached data instantly
   const buildRows = (regs) => {
     if (!regs.length) return '<tr class="empty-row"><td colspan="7">No registrations yet</td></tr>';
-    return [...regs].map(r => {
+    return regs.map(r => {
       const thumbHtml = r.photoUrl
         ? `<img src="${r.photoUrl}" style="width:28px;height:28px;border-radius:7px;object-fit:cover;vertical-align:middle;margin-right:7px">`
-        : `<span style="display:inline-flex;width:28px;height:28px;border-radius:7px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:12px;vertical-align:middle;margin-right:7px">${r.name[0]}</span>`;
+        : `<span style="display:inline-flex;width:28px;height:28px;border-radius:7px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:12px;vertical-align:middle;margin-right:7px">${(r.name||'?')[0]}</span>`;
       return `<tr>
         <td>${thumbHtml}<strong>${r.name}</strong></td>
         <td>${r.phone}</td>
         <td>${r.area}</td>
         <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(r.subjects||[]).join(', ')}</td>
-        <td>${new Date(r.submittedAt).toLocaleDateString()}</td>
+        <td>${r.submittedAt ? new Date(r.submittedAt).toLocaleDateString() : '—'}</td>
         <td><span class="pill ${r.status==='pending'?'pill-yellow':r.status==='approved'?'pill-green':'pill-red'}">${r.status}</span></td>
-        <td>${r.status==='pending'?`<button class="action-btn success" onclick="approveReg(${r.id})">Approve</button><button class="action-btn danger" onclick="rejectReg(${r.id})">Reject</button>`:''}</td>
+        <td>${r.status==='pending'?`<button class="action-btn success" onclick="approveReg(${r.id})">Approve</button> <button class="action-btn danger" onclick="rejectReg(${r.id})">Reject</button>`:''}</td>
       </tr>`;
     }).join('');
   };
 
-  // Render from cache immediately
-  tbody.innerHTML = buildRows(getRegs());
-  updateRegBadge();
+  // Show cached first instantly
+  const cached = getRegs();
+  if (cached.length) {
+    tbody.innerHTML = buildRows(cached);
+  } else {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7" style="color:var(--muted)">Fetching registrations...</td></tr>';
+  }
 
-  // Sync in background silently
-  syncRegistrations().then(() => {
-    tbody.innerHTML = buildRows(getRegs());
-    updateRegBadge();
-  });
+  // Always fetch fresh from Supabase
+  const fresh = await syncRegistrations();
+  tbody.innerHTML = buildRows(fresh.length ? fresh : getRegs());
+  updateRegBadge();
 }
 
 async function approveReg(id) {
