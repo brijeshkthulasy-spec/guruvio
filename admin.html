@@ -834,20 +834,16 @@ function renderAreaChart() {
 }
 
 // ---- TUTOR TABLE ----
-async function renderTutorTable(filter='') {
-  if (!filter) await syncTutors();
-  let tutors = getTutors();
-  if(filter) tutors = tutors.filter(t => t.name.toLowerCase().includes(filter) || t.area.toLowerCase().includes(filter) || t.subjects.join(' ').toLowerCase().includes(filter));
-  const tbody = document.getElementById('tutor-tbody');
-  if(!tutors.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No tutors found</td></tr>'; return; }
-  tbody.innerHTML = tutors.map(t => {
+function buildTutorRows(tutors) {
+  if (!tutors.length) return '<tr class="empty-row"><td colspan="6">No tutors found</td></tr>';
+  return tutors.map(t => {
     const thumbHtml = t.photoUrl
       ? `<img src="${t.photoUrl}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:8px">`
       : `<span style="display:inline-flex;width:32px;height:32px;border-radius:8px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:13px;vertical-align:middle;margin-right:8px">${t.avatar||t.name[0]}</span>`;
     return `<tr>
       <td>${thumbHtml}<strong>${t.name}</strong>${t.age ? `<span style="font-size:11px;color:var(--muted);margin-left:6px">${t.age}y</span>` : ''}</td>
       <td>${t.area}</td>
-      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.subjects.join(', ')}</td>
+      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(t.subjects||[]).join(', ')}</td>
       <td>${t.rating > 0 ? '★ '+t.rating : '—'}</td>
       <td><span class="pill ${t.active?'pill-green':'pill-red'}">${t.active?'Active':'Hidden'}</span></td>
       <td>
@@ -856,6 +852,25 @@ async function renderTutorTable(filter='') {
       </td>
     </tr>`;
   }).join('');
+}
+
+function renderTutorTable(filter='') {
+  let tutors = getTutors();
+  if (filter) tutors = tutors.filter(t =>
+    t.name.toLowerCase().includes(filter) ||
+    t.area.toLowerCase().includes(filter) ||
+    (t.subjects||[]).join(' ').toLowerCase().includes(filter)
+  );
+  const tbody = document.getElementById('tutor-tbody');
+  tbody.innerHTML = buildTutorRows(tutors);
+
+  // Sync in background only when no filter active
+  if (!filter) {
+    syncTutors().then(() => {
+      let fresh = getTutors();
+      tbody.innerHTML = buildTutorRows(fresh);
+    });
+  }
 }
 
 function filterTutorTable(v) { renderTutorTable(v.toLowerCase()); }
@@ -985,9 +1000,13 @@ async function saveTutor() {
 async function deleteTutor(id) {
   if(!confirm('Delete this tutor profile?')) return;
   await sbDeleteTutor(id);
-  await syncTutors();
+  // Remove from cache immediately
+  const tutors = getTutors().filter(t => t.id !== id);
+  saveTutors(tutors);
   renderTutorTable();
   toast('Tutor deleted.');
+  // Sync in background
+  syncTutors();
 }
 
 // ---- REVIEWS ----
@@ -1001,11 +1020,19 @@ function updateReviewBadge() {
   else badge.style.display = 'none';
 }
 
-async function filterReviews(status) {
-  await syncReviews();
+function filterReviews(status) {
+  // Show cached immediately
   let reviews = getReviews();
   if (status !== 'all') reviews = reviews.filter(r => r.status === status);
   renderReviewsGrid(reviews);
+
+  // Sync in background and refresh
+  syncReviews().then(() => {
+    let fresh = getReviews();
+    if (status !== 'all') fresh = fresh.filter(r => r.status === status);
+    renderReviewsGrid(fresh);
+    updateReviewBadge();
+  });
 }
 
 function renderReviewsGrid(reviews) {
@@ -1087,27 +1114,35 @@ function updateRegBadge() {
 
 async function renderRegTable() {
   const tbody = document.getElementById('reg-tbody');
-  tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Loading...</td></tr>';
-  await syncRegistrations();
-  const regs = getRegs();
-  if(!regs.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No registrations yet</td></tr>'; return; }
-  tbody.innerHTML = [...regs].map(r => {
-    const thumbHtml = r.photoUrl
-      ? `<img src="${r.photoUrl}" style="width:28px;height:28px;border-radius:7px;object-fit:cover;vertical-align:middle;margin-right:7px">`
-      : `<span style="display:inline-flex;width:28px;height:28px;border-radius:7px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:12px;vertical-align:middle;margin-right:7px">${r.name[0]}</span>`;
-    return `<tr>
-      <td>${thumbHtml}<strong>${r.name}</strong></td>
-      <td>${r.phone}</td>
-      <td>${r.area}</td>
-      <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(r.subjects||[]).join(', ')}</td>
-      <td>${new Date(r.submittedAt).toLocaleDateString()}</td>
-      <td><span class="pill ${r.status==='pending'?'pill-yellow':r.status==='approved'?'pill-green':'pill-red'}">${r.status}</span></td>
-      <td>
-        ${r.status==='pending'?`<button class="action-btn success" onclick="approveReg(${r.id})">Approve</button><button class="action-btn danger" onclick="rejectReg(${r.id})">Reject</button>`:''}
-      </td>
-    </tr>`;
-  }).join('');
+
+  // Show cached data instantly
+  const buildRows = (regs) => {
+    if (!regs.length) return '<tr class="empty-row"><td colspan="7">No registrations yet</td></tr>';
+    return [...regs].map(r => {
+      const thumbHtml = r.photoUrl
+        ? `<img src="${r.photoUrl}" style="width:28px;height:28px;border-radius:7px;object-fit:cover;vertical-align:middle;margin-right:7px">`
+        : `<span style="display:inline-flex;width:28px;height:28px;border-radius:7px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:12px;vertical-align:middle;margin-right:7px">${r.name[0]}</span>`;
+      return `<tr>
+        <td>${thumbHtml}<strong>${r.name}</strong></td>
+        <td>${r.phone}</td>
+        <td>${r.area}</td>
+        <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(r.subjects||[]).join(', ')}</td>
+        <td>${new Date(r.submittedAt).toLocaleDateString()}</td>
+        <td><span class="pill ${r.status==='pending'?'pill-yellow':r.status==='approved'?'pill-green':'pill-red'}">${r.status}</span></td>
+        <td>${r.status==='pending'?`<button class="action-btn success" onclick="approveReg(${r.id})">Approve</button><button class="action-btn danger" onclick="rejectReg(${r.id})">Reject</button>`:''}</td>
+      </tr>`;
+    }).join('');
+  };
+
+  // Render from cache immediately
+  tbody.innerHTML = buildRows(getRegs());
   updateRegBadge();
+
+  // Sync in background silently
+  syncRegistrations().then(() => {
+    tbody.innerHTML = buildRows(getRegs());
+    updateRegBadge();
+  });
 }
 
 async function approveReg(id) {
