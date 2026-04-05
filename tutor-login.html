@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tutor Login — Guruvio</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --deep:#0a0a14; --card:#12121f; --card2:#16162a;
+    --accent:#f5a623; --teal:#00c9a7; --red:#ff4757; --green:#2ed573;
+    --light:#f7f4ee; --muted:#9090a8; --border:rgba(255,255,255,0.07);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--deep);color:var(--light);font-family:'DM Sans',sans-serif;min-height:100vh}
+  body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.3;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+
+  /* ---- LOGIN ---- */
+  .login-wrap{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:24px;position:relative;
+  }
+  .login-glow{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:600px;height:600px;pointer-events:none;
+    background:radial-gradient(ellipse,rgba(245,166,35,0.08) 0%,transparent 65%);
+  }
+  .login-box{
+    background:var(--card);border:1px solid var(--border);border-radius:24px;
+    padding:48px 40px;width:100%;max-width:420px;position:relative;z-index:1;
+    animation:fadeUp 0.5s ease both;
+  }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  .login-back{
+    display:inline-flex;align-items:center;gap:6px;color:var(--muted);
+    text-decoration:none;font-size:13px;margin-bottom:28px;transition:color 0.2s;
+  }
+  .login-back:hover{color:var(--light)}
+  .login-logo{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;margin-bottom:6px}
+  .login-logo span{color:var(--accent)}
+  .login-sub{font-size:14px;color:var(--muted);margin-bottom:32px;line-height:1.5}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:7px;letter-spacing:0.3px}
+  .field input{
+    width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);
+    border-radius:12px;padding:13px 16px;color:var(--light);
+    font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;
+  }
+  .field input:focus{border-color:rgba(245,166,35,0.45)}
+  .field input::placeholder{color:var(--muted)}
+  .login-btn{
+    width:100%;background:var(--accent);color:#000;border:none;
+    border-radius:12px;padding:14px;font-size:15px;font-weight:600;
+    cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;margin-top:6px;
+  }
+  .login-btn:hover{background:#ffb84d;transform:translateY(-1px)}
+  .login-err{color:var(--red);font-size:13px;margin-top:10px;display:none;text-align:center}
+  .login-footer{text-align:center;margin-top:24px;font-size:13px;color:var(--muted)}
+  .login-footer a{color:var(--accent);text-decoration:none}
+  .login-footer a:hover{text-decoration:underline}
+  .divider{display:flex;align-items:center;gap:12px;margin:20px 0}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+  .divider span{font-size:12px;color:var(--muted)}
+
+  /* ---- DASHBOARD ---- */
+  .dashboard{display:none;min-height:100vh}
+
+  /* TOP NAV */
+  .dash-nav{
+    position:sticky;top:0;z-index:100;
+    background:rgba(10,10,20,0.92);backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 40px;
+  }
+  .dash-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;text-decoration:none;color:var(--light)}
+  .dash-logo span{color:var(--accent)}
+  .dash-nav-right{display:flex;align-items:center;gap:14px}
+  .tutor-avatar-sm{
+    width:36px;height:36px;border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;font-weight:700;font-family:'Playfair Display',serif;
+    background:linear-gradient(135deg,#f5a623,#e05c2a);color:#fff;
+    cursor:pointer;flex-shrink:0;
+  }
+  .dash-tutor-name{font-size:14px;font-weight:500;color:var(--light)}
+  .logout-link{
+    font-size:13px;color:var(--muted);background:transparent;
+    border:1px solid var(--border);border-radius:100px;
+    padding:7px 16px;cursor:pointer;font-family:'DM Sans',sans-serif;
+    transition:all 0.2s;text-decoration:none;
+  }
+  .logout-link:hover{color:var(--red);border-color:var(--red)}
+
+  /* LAYOUT */
+  .dash-body{max-width:1100px;margin:0 auto;padding:40px 24px}
+
+  /* WELCOME */
+  .welcome-bar{
+    background:var(--card);border:1px solid var(--border);border-radius:20px;
+    padding:28px 32px;margin-bottom:28px;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+  }
+  .welcome-left h1{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;margin-bottom:4px}
+  .welcome-left p{font-size:14px;color:var(--muted)}
+  .profile-status{display:flex;align-items:center;gap:8px;font-size:13px}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.3)}}
+
+  /* STAT CARDS */
+  .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+  .scard{
+    background:var(--card);border:1px solid var(--border);border-radius:16px;
+    padding:22px;transition:all 0.3s;
+  }
+  .scard:hover{border-color:rgba(245,166,35,0.2);transform:translateY(-2px)}
+  .scard-label{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:8px}
+  .scard-val{font-family:'Playfair Display',serif;font-size:36px;font-weight:700;line-height:1}
+  .scard-val.gold{color:var(--accent)}
+  .scard-val.teal{color:var(--teal)}
+  .scard-val.green{color:var(--green)}
+  .scard-sub{font-size:11px;color:var(--muted);margin-top:6px}
+
+  /* TABS */
+  .tabs{display:flex;gap:4px;background:rgba(255,255,255,0.04);border-radius:14px;padding:4px;margin-bottom:24px;width:fit-content}
+  .tab{
+    padding:9px 20px;border-radius:10px;font-size:14px;font-weight:500;
+    cursor:pointer;transition:all 0.2s;color:var(--muted);border:none;background:transparent;
+    font-family:'DM Sans',sans-serif;
+  }
+  .tab.active{background:var(--card);color:var(--light);box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+
+  /* SECTIONS */
+  .tab-section{display:none}
+  .tab-section.active{display:block}
+
+  /* CHART */
+  .chart-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px}
+  .chart-card h3{font-size:14px;font-weight:600;color:var(--muted);margin-bottom:18px;text-transform:uppercase;letter-spacing:1px}
+  .bar-chart{display:flex;flex-direction:column;gap:10px}
+  .bar-row{display:flex;align-items:center;gap:10px}
+  .bar-label{font-size:11px;color:var(--muted);width:55px;flex-shrink:0;text-align:right}
+  .bar-track{flex:1;background:rgba(255,255,255,0.05);border-radius:100px;height:10px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--accent),#e05c2a);transition:width 0.8s ease}
+  .bar-fill.teal{background:linear-gradient(90deg,var(--teal),#0095ff)}
+  .bar-val{font-size:12px;color:var(--light);font-weight:500;width:28px;text-align:right}
+
+  /* EDIT FORM */
+  .edit-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;margin-bottom:20px}
+  .edit-card h3{font-size:16px;font-weight:600;margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .efield{margin-bottom:16px}
+  .efield label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:7px}
+  .efield input,.efield select,.efield textarea{
+    width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);
+    border-radius:12px;padding:12px 15px;color:var(--light);
+    font-family:'DM Sans',sans-serif;font-size:14px;outline:none;
+    transition:border-color 0.2s;appearance:none;
+  }
+  .efield input:focus,.efield select:focus,.efield textarea:focus{border-color:rgba(245,166,35,0.45)}
+  .efield select option{background:var(--card)}
+  .efield textarea{resize:vertical;min-height:100px}
+  .checkboxes{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+  .cb-item input{display:none}
+  .cb-item label{
+    display:inline-block;padding:6px 14px;border-radius:100px;
+    background:rgba(255,255,255,0.05);border:1px solid var(--border);
+    font-size:12px;color:var(--muted);cursor:pointer;transition:all 0.15s;user-select:none;
+  }
+  .cb-item input:checked+label{background:rgba(245,166,35,0.15);border-color:rgba(245,166,35,0.4);color:var(--accent)}
+  .save-btn{
+    background:var(--accent);color:#000;border:none;border-radius:12px;
+    padding:13px 28px;font-size:14px;font-weight:600;
+    cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;
+  }
+  .save-btn:hover{background:#ffb84d;transform:translateY(-1px)}
+
+  /* OPTIMISE TIPS */
+  .tips-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+  .tip-card{
+    background:var(--card);border:1px solid var(--border);border-radius:16px;
+    padding:22px;transition:all 0.3s;position:relative;overflow:hidden;
+  }
+  .tip-card.done{border-color:rgba(0,201,167,0.25)}
+  .tip-card.done::before{
+    content:'✓';position:absolute;top:14px;right:16px;
+    width:22px;height:22px;border-radius:50%;
+    background:rgba(0,201,167,0.15);color:var(--teal);
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+  }
+  .tip-icon{font-size:24px;margin-bottom:12px}
+  .tip-card h4{font-size:15px;font-weight:600;margin-bottom:6px}
+  .tip-card p{font-size:13px;color:var(--muted);line-height:1.6}
+  .tip-score{
+    display:flex;align-items:center;gap:8px;
+    background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:20px;
+  }
+  .score-bar-wrap{flex:1;background:rgba(255,255,255,0.05);border-radius:100px;height:10px;overflow:hidden}
+  .score-bar{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--accent),var(--teal));transition:width 1s ease}
+  .score-num{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--accent);white-space:nowrap}
+
+  /* Photo upload in edit */
+  .photo-upload-wrap { display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+  .photo-edit-preview {
+    width:80px; height:80px; border-radius:16px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:28px; font-weight:700; font-family:'Playfair Display',serif;
+    overflow:hidden; background:rgba(255,255,255,0.05); border:1px solid var(--border);
+  }
+  .photo-edit-preview img { width:100%; height:100%; object-fit:cover; border-radius:16px; }
+  .upload-btn {
+    display:inline-block; background:rgba(255,255,255,0.07); border:1px solid var(--border);
+    border-radius:10px; padding:9px 18px; font-size:13px; color:var(--light);
+    cursor:pointer; transition:all 0.2s; font-family:'DM Sans',sans-serif;
+  }
+  .upload-btn:hover { border-color:rgba(245,166,35,0.4); color:var(--accent); }
+
+  /* TOAST */
+  .toast{
+    position:fixed;bottom:16px;left:16px;right:16px;z-index:9999;
+    background:var(--card);border:1px solid rgba(0,201,167,0.3);
+    border-radius:12px;padding:14px 20px;font-size:14px;color:var(--teal);font-weight:500;
+    box-shadow:0 8px 32px rgba(0,0,0,0.4);text-align:center;
+    transform:translateY(80px);opacity:0;transition:all 0.3s;
+  }
+  .toast.show{transform:translateY(0);opacity:1}
+
+  @media(max-width:640px){
+    /* Login */
+    .login-box { padding:28px 20px; border-radius:20px; }
+    .login-logo { font-size:22px; }
+    .login-sub { font-size:13px; margin-bottom:24px; }
+    .field input { font-size:16px; padding:13px 14px; }
+    .login-btn { font-size:15px; padding:14px; }
+
+    /* Dashboard nav */
+    .dash-nav { padding:13px 16px; }
+    .dash-tutor-name { display:none; }
+
+    /* Dashboard body */
+    .dash-body { padding:20px 14px; }
+
+    /* Welcome bar */
+    .welcome-bar { padding:18px 16px; flex-direction:column; align-items:flex-start; gap:10px; }
+    .welcome-left h1 { font-size:22px; }
+    .welcome-left p { font-size:13px; }
+
+    /* Stats */
+    .stat-row { grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+    .scard { padding:16px 14px; }
+    .scard-val { font-size:28px; }
+    .scard-label { font-size:11px; }
+    .scard-sub { font-size:10px; }
+
+    /* Tabs */
+    .tabs { width:100%; }
+    .tab { flex:1; padding:9px 8px; font-size:13px; text-align:center; }
+
+    /* Charts */
+    .chart-card { padding:18px 14px; }
+    .bar-label { width:40px; font-size:10px; }
+
+    /* Edit form */
+    .edit-card { padding:20px 16px; border-radius:16px; }
+    .edit-card h3 { font-size:15px; }
+    .form-row { grid-template-columns:1fr; gap:12px; }
+    .efield input, .efield select, .efield textarea { font-size:16px; padding:12px 14px; }
+    .save-btn { width:100%; padding:14px; font-size:15px; }
+
+    /* Optimise */
+    .tips-grid { grid-template-columns:1fr; gap:12px; }
+    .tip-card { padding:18px 16px; }
+    .tip-score { flex-direction:column; align-items:flex-start; gap:10px; padding:16px; }
+    .score-bar-wrap { width:100%; }
+    .score-num { font-size:20px; }
+
+    /* Checkboxes */
+    .checkboxes { gap:6px; }
+    .cb-item label { font-size:12px; padding:6px 11px; }
+  }
+
+  @media(max-width:360px) {
+    .stat-row { grid-template-columns:1fr; }
+    .tabs { flex-direction:column; }
+    .tab { border-radius:8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div class="login-wrap" id="login-screen">
+  <div class="login-glow"></div>
+  <div class="login-box">
+    <a href="index.html" class="login-back">
+      ← Back to Guruvio
+    </a>
+    <div class="login-logo">Guru<span>vio</span></div>
+    <div class="login-sub">Tutor Portal — Sign in to manage your profile and see your analytics.</div>
+
+    <div class="field">
+      <label>WhatsApp Number</label>
+      <input type="tel" id="login-phone" placeholder="91XXXXXXXXXX" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Your password">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="login-err">Incorrect phone number or password.</div>
+
+    <div class="divider"><span>New to Guruvio?</span></div>
+    <div class="login-footer">
+      Don't have an account? <a href="tutor-register.html">List your profile →</a>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div class="dashboard" id="dashboard">
+
+  <nav class="dash-nav">
+    <a href="index.html" class="dash-logo">Guru<span>vio</span></a>
+    <div class="dash-nav-right">
+      <div class="tutor-avatar-sm" id="dash-avatar">T</div>
+      <span class="dash-tutor-name" id="dash-name">Tutor</span>
+      <button class="logout-link" onclick="doLogout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="dash-body">
+
+    <!-- WELCOME -->
+    <div class="welcome-bar">
+      <div class="welcome-left">
+        <h1>Welcome back, <span id="welcome-name" style="color:var(--accent)">Tutor</span>!</h1>
+        <p>Here's how your profile is performing on Guruvio</p>
+      </div>
+      <div class="profile-status">
+        <div class="status-dot"></div>
+        <span id="profile-status-text" style="color:var(--green)">Profile Active</span>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stat-row">
+      <div class="scard">
+        <div class="scard-label">Profile Views</div>
+        <div class="scard-val gold" id="stat-views">0</div>
+        <div class="scard-sub">Parents viewed your profile</div>
+      </div>
+      <div class="scard">
+        <div class="scard-label">WhatsApp Clicks</div>
+        <div class="scard-val teal" id="stat-clicks">0</div>
+        <div class="scard-sub">Parents tapped to connect</div>
+      </div>
+      <div class="scard">
+        <div class="scard-label">This Week</div>
+        <div class="scard-val green" id="stat-week">0</div>
+        <div class="scard-sub">Views in last 7 days</div>
+      </div>
+      <div class="scard">
+        <div class="scard-label">Profile Score</div>
+        <div class="scard-val gold" id="stat-score">0%</div>
+        <div class="scard-sub">Optimisation score</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('analytics',this)">Analytics</button>
+      <button class="tab" onclick="switchTab('edit',this)">Edit Profile</button>
+      <button class="tab" onclick="switchTab('optimise',this)">Optimise Profile</button>
+    </div>
+
+    <!-- ANALYTICS TAB -->
+    <div class="tab-section active" id="tab-analytics">
+      <div class="chart-card">
+        <h3>Profile Views — Last 7 Days</h3>
+        <div class="bar-chart" id="views-chart"></div>
+      </div>
+      <div class="chart-card">
+        <h3>WhatsApp Clicks — Last 7 Days</h3>
+        <div class="bar-chart" id="clicks-chart"></div>
+      </div>
+    </div>
+
+    <!-- EDIT PROFILE TAB -->
+    <div class="tab-section" id="tab-edit">
+      <div class="edit-card">
+        <h3>Profile Photo</h3>
+        <div class="photo-upload-wrap">
+          <div class="photo-edit-preview" id="edit-photo-preview"></div>
+          <div class="photo-edit-info">
+            <div style="font-size:14px;color:var(--light);font-weight:500;margin-bottom:6px">Upload your photo</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:12px">A clear face photo builds parent trust instantly</div>
+            <label class="upload-btn">
+              Choose Photo
+              <input type="file" id="edit-photo-input" accept="image/*" style="display:none" onchange="handleEditPhoto(this)">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="edit-card">
+        <h3>Personal Details</h3>
+        <div class="form-row">
+          <div class="efield"><label>Full Name</label><input id="e-name" placeholder="Your name"></div>
+          <div class="efield"><label>Age</label><input type="number" id="e-age" placeholder="e.g. 28" min="18" max="80"></div>
+        </div>
+        <div class="form-row">
+          <div class="efield"><label>Experience</label><input id="e-exp" placeholder="e.g. 5 years"></div>
+          <div class="efield"><label>Rating (0–5)</label><input type="number" id="e-rating-display" disabled style="opacity:0.5;cursor:not-allowed" placeholder="Set by admin"></div>
+        </div>
+        <div class="form-row">
+          <div class="efield">
+            <label>Area</label>
+            <select id="e-area">
+              <option value="">Select area</option>
+              <option>Pattom</option><option>Kowdiar</option><option>Kazhakuttam</option>
+              <option>Vanchiyoor</option><option>Nemom</option><option>Kesavadasapuram</option>
+              <option>Sasthamangalam</option><option>Manacaud</option><option>Thampanoor</option>
+              <option>Nalanchira</option><option>Nanthancode</option><option>Peroorkada</option>
+              <option>Thirumala</option><option>Ulloor</option><option>Vattiyoorkavu</option>
+              <option>Pappanamcode</option><option>Palayam</option><option>Sreekaryam</option>
+              <option>PMG</option><option>Technopark</option>
+            </select>
+          </div>
+          <div class="efield">
+            <label>Qualification</label>
+            <select id="e-qual">
+              <option value="">Select</option>
+              <option>B.Ed</option><option>M.Ed</option><option>B.Sc</option>
+              <option>M.Sc</option><option>B.Tech</option><option>M.Tech</option>
+              <option>BA</option><option>MA</option><option>PhD</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="efield">
+          <label>College / University</label>
+          <input id="e-edu" placeholder="e.g. University of Kerala">
+        </div>
+        <div class="efield">
+          <label>About You</label>
+          <textarea id="e-bio" placeholder="Tell parents about your teaching style, experience and approach..."></textarea>
+        </div>
+      </div>
+
+      <div class="edit-card">
+        <h3>Subjects & Classes</h3>
+        <div class="efield">
+          <label>Subjects You Teach</label>
+          <div class="checkboxes">
+            <div class="cb-item"><input type="checkbox" id="es1" value="Mathematics"><label for="es1">Mathematics</label></div>
+            <div class="cb-item"><input type="checkbox" id="es2" value="Physics"><label for="es2">Physics</label></div>
+            <div class="cb-item"><input type="checkbox" id="es3" value="Chemistry"><label for="es3">Chemistry</label></div>
+            <div class="cb-item"><input type="checkbox" id="es4" value="Biology"><label for="es4">Biology</label></div>
+            <div class="cb-item"><input type="checkbox" id="es5" value="English"><label for="es5">English</label></div>
+            <div class="cb-item"><input type="checkbox" id="es6" value="Malayalam"><label for="es6">Malayalam</label></div>
+            <div class="cb-item"><input type="checkbox" id="es7" value="Hindi"><label for="es7">Hindi</label></div>
+            <div class="cb-item"><input type="checkbox" id="es8" value="Social Science"><label for="es8">Social Science</label></div>
+            <div class="cb-item"><input type="checkbox" id="es9" value="Computer Science"><label for="es9">Computer Science</label></div>
+            <div class="cb-item"><input type="checkbox" id="es10" value="Accountancy"><label for="es10">Accountancy</label></div>
+          </div>
+        </div>
+        <div class="efield" style="margin-top:16px">
+          <label>Classes You Handle</label>
+          <div class="checkboxes">
+            <div class="cb-item"><input type="checkbox" id="ec1" value="Class 1–5"><label for="ec1">Class 1–5</label></div>
+            <div class="cb-item"><input type="checkbox" id="ec2" value="Class 6–8"><label for="ec2">Class 6–8</label></div>
+            <div class="cb-item"><input type="checkbox" id="ec3" value="Class 9–10"><label for="ec3">Class 9–10</label></div>
+            <div class="cb-item"><input type="checkbox" id="ec4" value="Plus One"><label for="ec4">Plus One</label></div>
+            <div class="cb-item"><input type="checkbox" id="ec5" value="Plus Two"><label for="ec5">Plus Two</label></div>
+            <div class="cb-item"><input type="checkbox" id="ec6" value="Degree"><label for="ec6">Degree</label></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="edit-card">
+        <h3>Change Password</h3>
+        <div class="form-row">
+          <div class="efield"><label>New Password</label><input type="password" id="e-newpass" placeholder="Enter new password"></div>
+          <div class="efield"><label>Confirm Password</label><input type="password" id="e-confirmpass" placeholder="Confirm new password"></div>
+        </div>
+      </div>
+
+      <button class="save-btn" onclick="saveProfile()">Save Changes</button>
+    </div>
+
+    <!-- OPTIMISE TAB -->
+    <div class="tab-section" id="tab-optimise">
+      <div class="tip-score">
+        <div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:4px">Your Profile Score</div>
+          <div style="font-size:13px;color:var(--light)" id="score-label">Calculating...</div>
+        </div>
+        <div class="score-bar-wrap"><div class="score-bar" id="score-bar" style="width:0%"></div></div>
+        <div class="score-num" id="score-pct">0%</div>
+      </div>
+      <div class="tips-grid" id="tips-grid"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---- DATA ----
+function getTutors() {
+  const s = localStorage.getItem('guruvio_tutors');
+  return s ? JSON.parse(s) : [];
+}
+function saveTutors(t) { localStorage.setItem('guruvio_tutors', JSON.stringify(t)); }
+function getViews() { return JSON.parse(localStorage.getItem('guruvio_profile_views') || '[]'); }
+function getContacts() { return JSON.parse(localStorage.getItem('guruvio_contacts') || '[]'); }
+
+let currentTutor = null;
+
+// ---- AUTH ----
+function doLogin() {
+  const phone = document.getElementById('login-phone').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const tutors = getTutors();
+  const tutor = tutors.find(t => t.phone === phone);
+  if (!tutor) { showErr('No tutor found with this WhatsApp number.'); return; }
+  const storedPass = localStorage.getItem('tutor_pass_' + tutor.id);
+  // First time login — if no password set, use last 4 digits of phone
+  const defaultPass = phone.slice(-4);
+  const validPass = storedPass || defaultPass;
+  if (pass !== validPass) { showErr('Incorrect password. Default is last 4 digits of your number.'); return; }
+  currentTutor = tutor;
+  sessionStorage.setItem('guruvio_tutor_id', tutor.id);
+  showDashboard(tutor);
+}
+
+function showErr(msg) {
+  const el = document.getElementById('login-err');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+document.getElementById('login-pass').addEventListener('keypress', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogout() {
+  sessionStorage.removeItem('guruvio_tutor_id');
+  currentTutor = null;
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-phone').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-err').style.display = 'none';
+}
+
+// ---- DASHBOARD ---- 
+function showDashboard(tutor) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  // Set name & avatar
+  document.getElementById('dash-avatar').textContent = tutor.name[0].toUpperCase();
+  document.getElementById('dash-name').textContent = tutor.name;
+  document.getElementById('welcome-name').textContent = tutor.name.split(' ')[0];
+  document.getElementById('profile-status-text').textContent = tutor.active ? 'Profile Active' : 'Profile Hidden';
+  document.getElementById('profile-status-text').style.color = tutor.active ? 'var(--green)' : 'var(--red)';
+  loadStats(tutor);
+  loadEditForm(tutor);
+  loadOptimise(tutor);
+  renderViewsChart(tutor);
+  renderClicksChart(tutor);
+}
+
+// ---- STATS ----
+function loadStats(tutor) {
+  const views    = getViews().filter(v => v.tutorId === tutor.id);
+  const clicks   = getContacts().filter(c => c.tutorId === tutor.id);
+  const weekAgo  = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+  const weekViews = views.filter(v => new Date(v.time) >= weekAgo);
+  document.getElementById('stat-views').textContent  = views.length;
+  document.getElementById('stat-clicks').textContent = clicks.length;
+  document.getElementById('stat-week').textContent   = weekViews.length;
+  const score = calcScore(tutor);
+  document.getElementById('stat-score').textContent = score + '%';
+}
+
+// ---- CHARTS ----
+function renderViewsChart(tutor) {
+  const views = getViews().filter(v => v.tutorId === tutor.id);
+  renderDayChart('views-chart', views, false);
+}
+function renderClicksChart(tutor) {
+  const clicks = getContacts().filter(c => c.tutorId === tutor.id);
+  renderDayChart('clicks-chart', clicks, true);
+}
+function renderDayChart(elId, data, isTeal) {
+  const days = {};
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    days[d.toISOString().split('T')[0]] = 0;
+  }
+  data.forEach(v => { const k = v.time.split('T')[0]; if (days[k] !== undefined) days[k]++; });
+  const max = Math.max(...Object.values(days), 1);
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById(elId).innerHTML = Object.entries(days).map(([d, c]) => {
+    const dayName = dayNames[new Date(d).getDay()];
+    return `<div class="bar-row">
+      <div class="bar-label">${dayName}</div>
+      <div class="bar-track"><div class="bar-fill ${isTeal?'teal':''}" style="width:${Math.max(2, c/max*100)}%"></div></div>
+      <div class="bar-val">${c}</div>
+    </div>`;
+  }).join('');
+}
+
+// ---- EDIT FORM ----
+let editPhotoUrl = null;
+
+function handleEditPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 2 * 1024 * 1024) { toast('Photo must be under 2MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    editPhotoUrl = e.target.result;
+    document.getElementById('edit-photo-preview').innerHTML = `<img src="${editPhotoUrl}" alt="Photo">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function loadEditForm(tutor) {
+  document.getElementById('e-name').value  = tutor.name || '';
+  document.getElementById('e-age').value   = tutor.age || '';
+  document.getElementById('e-exp').value   = (tutor.exp || '').replace(' years','').replace(' year','');
+  document.getElementById('e-area').value  = tutor.area || '';
+  document.getElementById('e-qual').value  = tutor.qual || '';
+  document.getElementById('e-edu').value   = tutor.edu  || '';
+  document.getElementById('e-bio').value   = tutor.bio  || '';
+  document.getElementById('e-rating-display').value = tutor.rating || '';
+  // Load photo preview
+  const preview = document.getElementById('edit-photo-preview');
+  preview.className = 'photo-edit-preview ' + (tutor.avClass || '');
+  preview.innerHTML = tutor.photoUrl
+    ? `<img src="${tutor.photoUrl}" alt="${tutor.name}">`
+    : tutor.avatar || tutor.name[0].toUpperCase();
+  editPhotoUrl = tutor.photoUrl || null;
+  document.querySelectorAll('[id^=es]').forEach(c => { c.checked = (tutor.subjects||[]).includes(c.value); });
+  document.querySelectorAll('[id^=ec]').forEach(c => { c.checked = (tutor.classes||[]).includes(c.value); });
+}
+
+function saveProfile() {
+  const tutors = getTutors();
+  const idx = tutors.findIndex(t => t.id === currentTutor.id);
+  if (idx === -1) { toast('Error: tutor not found.'); return; }
+  const newpass = document.getElementById('e-newpass').value;
+  const confirm = document.getElementById('e-confirmpass').value;
+  if (newpass) {
+    if (newpass !== confirm) { toast('Passwords do not match!'); return; }
+    localStorage.setItem('tutor_pass_' + currentTutor.id, newpass);
+  }
+  const expVal = document.getElementById('e-exp').value;
+  tutors[idx] = {
+    ...tutors[idx],
+    name:     document.getElementById('e-name').value.trim() || tutors[idx].name,
+    age:      parseInt(document.getElementById('e-age').value) || tutors[idx].age || null,
+    exp:      expVal ? expVal + ' years' : tutors[idx].exp,
+    area:     document.getElementById('e-area').value || tutors[idx].area,
+    qual:     document.getElementById('e-qual').value,
+    edu:      document.getElementById('e-edu').value,
+    bio:      document.getElementById('e-bio').value,
+    photoUrl: editPhotoUrl || tutors[idx].photoUrl || null,
+    subjects: [...document.querySelectorAll('[id^=es]:checked')].map(c => c.value),
+    classes:  [...document.querySelectorAll('[id^=ec]:checked')].map(c => c.value),
+    avatar:   (document.getElementById('e-name').value.trim() || tutors[idx].name)[0].toUpperCase(),
+  };
+  saveTutors(tutors);
+  currentTutor = tutors[idx];
+  document.getElementById('dash-name').textContent = currentTutor.name;
+  document.getElementById('welcome-name').textContent = currentTutor.name.split(' ')[0];
+  document.getElementById('dash-avatar').textContent = currentTutor.name[0].toUpperCase();
+  loadOptimise(currentTutor);
+  loadStats(currentTutor);
+  toast('Profile updated successfully!');
+}
+
+// ---- OPTIMISE ----
+const TIPS = [
+  { id:'photo',    icon:'📸', title:'Add a Profile Photo',       desc:'Tutors with photos get 3x more clicks from parents.',           check: t => !!(t.photoUrl) },
+  { id:'bio',      icon:'✍️', title:'Write Your About Me',       desc:'Tell parents your teaching style and what makes you great.',     check: t => !!(t.bio && t.bio.length > 40) },
+  { id:'qual',     icon:'🎓', title:'Add Your Qualification',    desc:'Parents trust tutors with verified qualifications.',             check: t => !!(t.qual) },
+  { id:'subjects', icon:'📚', title:'List All Your Subjects',    desc:'More subjects = more parents can find you.',                     check: t => (t.subjects||[]).length >= 2 },
+  { id:'classes',  icon:'📝', title:'List All Classes You Handle', desc:'Be specific about which classes you teach.',                   check: t => (t.classes||[]).length >= 2 },
+  { id:'exp',      icon:'⏳', title:'Add Years of Experience',   desc:'Experience builds parent confidence instantly.',                  check: t => !!(t.exp && t.exp !== '—') },
+  { id:'active',   icon:'🟢', title:'Keep Your Profile Active',  desc:'Active profiles appear first in search results.',                check: t => t.active === true },
+  { id:'area',     icon:'📍', title:'Set Your Area',             desc:'Parents search by area — make sure yours is set.',              check: t => !!(t.area) },
+];
+
+function calcScore(tutor) {
+  const done = TIPS.filter(tip => tip.check(tutor)).length;
+  return Math.round((done / TIPS.length) * 100);
+}
+
+function loadOptimise(tutor) {
+  const score = calcScore(tutor);
+  document.getElementById('score-bar').style.width = score + '%';
+  document.getElementById('score-pct').textContent = score + '%';
+  document.getElementById('stat-score').textContent = score + '%';
+  const labels = ['Getting started','Looking good!','Almost there!','Great profile!','Perfect!'];
+  const labelIdx = Math.min(Math.floor(score / 25), 4);
+  document.getElementById('score-label').textContent = labels[labelIdx];
+  document.getElementById('tips-grid').innerHTML = TIPS.map(tip => {
+    const done = tip.check(tutor);
+    return `<div class="tip-card ${done?'done':''}">
+      <div class="tip-icon">${tip.icon}</div>
+      <h4>${tip.title}</h4>
+      <p>${tip.desc}</p>
+      ${!done ? `<button class="save-btn" style="margin-top:14px;padding:8px 18px;font-size:12px" onclick="switchTab('edit',document.querySelectorAll('.tab')[1])">Fix Now →</button>` : `<div style="margin-top:14px;font-size:12px;color:var(--teal);font-weight:600">✓ Done</div>`}
+    </div>`;
+  }).join('');
+}
+
+// ---- TABS ----
+function switchTab(id, el) {
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  el.classList.add('active');
+}
+
+// ---- TOAST ----
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ---- AUTO LOGIN if session exists ----
+window.addEventListener('load', () => {
+  const savedId = sessionStorage.getItem('guruvio_tutor_id');
+  if (savedId) {
+    const tutors = getTutors();
+    const tutor = tutors.find(t => t.id == savedId);
+    if (tutor) { currentTutor = tutor; showDashboard(tutor); }
+  }
+});
+</script>
+</body>
+</html>
