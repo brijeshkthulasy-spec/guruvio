@@ -575,6 +575,15 @@ async function sbGet(path) { return sbFetch(path); }
 async function sbPost(table, data) { return sbFetch(table, { method:'POST', body:JSON.stringify(data) }); }
 async function sbPatch(table, query, data) { return sbFetch(`${table}?${query}`, { method:'PATCH', prefer:'return=minimal', body:JSON.stringify(data) }); }
 async function sbDelete(table, query) { return sbFetch(`${table}?${query}`, { method:'DELETE', prefer:'return=minimal' }); }
+async function sbCount(table) {
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}?select=id`, {
+      headers: { ...H, 'Prefer': 'count=exact', 'Range': '0-0' }
+    });
+    const range = r.headers.get('content-range');
+    return range ? parseInt(range.split('/')[1]) || 0 : 0;
+  } catch { return 0; }
+}
 
 function getVisits() { return []; }
 function getContacts() { return []; }
@@ -712,23 +721,29 @@ function toast(msg) {
 
 // ---- DASHBOARD ----
 async function renderDashboard() {
-  // Show loading zeros first
-  ['d-total','d-active','d-pending','d-rev-pending','d-visits','d-contacts','d-regs'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = '...';
-  });
+  // Show cached data instantly if available
+  const cachedTutors = getTutors();
+  const cachedRegs = getRegs();
+  const cachedReviews = getReviews();
+  if (cachedTutors.length) {
+    document.getElementById('d-total').textContent = cachedTutors.length;
+    document.getElementById('d-active').textContent = cachedTutors.filter(t=>t.active).length;
+    document.getElementById('d-pending').textContent = cachedRegs.filter(r=>r.status==='pending').length;
+    document.getElementById('d-regs').textContent = cachedRegs.length;
+    const revPendEl = document.getElementById('d-rev-pending');
+    if (revPendEl) revPendEl.textContent = cachedReviews.filter(r=>r.status==='pending').length;
+  }
 
-  // Fetch fresh from Supabase in parallel
-  const [tutors, regs, reviews, visits, contacts] = await Promise.all([
-    sbGet('tutors?order=id.asc'),
-    sbGet('registrations?order=submitted_at.desc'),
-    sbGet('reviews?order=created_at.desc'),
-    sbGet('visits?order=visited_at.desc'),
-    sbGet('contacts?order=contacted_at.desc')
+  // Fetch critical data first (fast — small tables)
+  const [tutors, regs, reviews] = await Promise.all([
+    sbGet('tutors?select=id,name,area,active&order=id.asc'),
+    sbGet('registrations?select=id,name,phone,area,subjects,classes,exp,age,qual,edu,bio,photo_url,av_class,status,submitted_at,password&order=submitted_at.desc'),
+    sbGet('reviews?select=id,tutor_id,reviewer_name,review_text,rating,status,created_at&order=created_at.desc')
   ]);
 
-  // Save to cache
-  localStorage.setItem('guruvio_tutors', JSON.stringify(tutors.map(t => ({
+  // Update cache
+  const fullTutors = await sbGet('tutors?order=id.asc');
+  localStorage.setItem('guruvio_tutors', JSON.stringify(fullTutors.map(t => ({
     id:t.id, name:t.name, phone:t.phone, area:t.area,
     subjects:t.subjects||[], classes:t.classes||[],
     exp:t.exp||'', age:t.age, qual:t.qual||'', edu:t.edu||'',
@@ -741,29 +756,26 @@ async function renderDashboard() {
     subjects:r.subjects||[], classes:r.classes||[],
     exp:r.exp||'', age:r.age, qual:r.qual||'', edu:r.edu||'',
     bio:r.bio||'', photoUrl:r.photo_url, avClass:r.av_class||'av1',
-    status:r.status, submittedAt:r.submitted_at
+    status:r.status, submittedAt:r.submitted_at, password:r.password||null
   }))));
   localStorage.setItem('guruvio_reviews', JSON.stringify(reviews.map(r => ({
     id:r.id, tutorId:r.tutor_id, name:r.reviewer_name,
     text:r.review_text, rating:r.rating, status:r.status, date:r.created_at
   }))));
 
-  // Update dashboard cards
+  // Update dashboard stat cards
   document.getElementById('d-total').textContent = tutors.length;
   document.getElementById('d-active').textContent = tutors.filter(t=>t.active).length;
   document.getElementById('d-pending').textContent = regs.filter(r=>r.status==='pending').length;
+  document.getElementById('d-regs').textContent = regs.length;
   const revPendEl = document.getElementById('d-rev-pending');
   if (revPendEl) revPendEl.textContent = reviews.filter(r=>r.status==='pending').length;
-  document.getElementById('d-visits').textContent = visits.length;
-  document.getElementById('d-contacts').textContent = contacts.length;
-  document.getElementById('d-regs').textContent = regs.length;
 
-  // Update badges
+  // Update nav badges immediately
   const pendingRegs = regs.filter(r=>r.status==='pending').length;
   const regBadge = document.getElementById('reg-badge');
   if (pendingRegs > 0) { regBadge.textContent = pendingRegs; regBadge.style.display = 'inline'; }
   else regBadge.style.display = 'none';
-
   const pendingRevs = reviews.filter(r=>r.status==='pending').length;
   const revBadge = document.getElementById('review-badge');
   if (revBadge) {
@@ -771,7 +783,25 @@ async function renderDashboard() {
     else revBadge.style.display = 'none';
   }
 
-  // Charts
+  // Fetch visits/contacts in background — only last 7 days, limit 500
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const since = sevenDaysAgo.toISOString();
+
+  const [visits, contacts] = await Promise.all([
+    sbGet(`visits?visited_at=gte.${since}&order=visited_at.desc&limit=500`),
+    sbGet(`contacts?contacted_at=gte.${since}&order=contacted_at.desc&limit=500`)
+  ]);
+
+  // Get total counts via head request
+  const [visitsTotal, contactsTotal] = await Promise.all([
+    sbCount('visits'),
+    sbCount('contacts')
+  ]);
+
+  document.getElementById('d-visits').textContent = visitsTotal;
+  document.getElementById('d-contacts').textContent = contactsTotal;
+
   renderVisitChart(visits);
   renderAreaChart();
 }
@@ -1196,8 +1226,8 @@ function toggleFeature(btn) {
 
 // ---- INIT ----
 async function initAdmin() {
-  toast('Loading data...');
-  await renderDashboard();
+  // Show cached data instantly (no waiting)
+  renderDashboard();
 }
 </script>
 </body>
