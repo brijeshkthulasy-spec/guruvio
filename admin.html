@@ -576,12 +576,6 @@ async function sbPost(table, data) { return sbFetch(table, { method:'POST', body
 async function sbPatch(table, query, data) { return sbFetch(`${table}?${query}`, { method:'PATCH', prefer:'return=minimal', body:JSON.stringify(data) }); }
 async function sbDelete(table, query) { return sbFetch(`${table}?${query}`, { method:'DELETE', prefer:'return=minimal' }); }
 
-function getTutors() { return JSON.parse(localStorage.getItem('guruvio_tutors') || '[]'); }
-function saveTutors(t) { localStorage.setItem('guruvio_tutors', JSON.stringify(t)); }
-function getRegs() { return JSON.parse(localStorage.getItem('guruvio_registrations') || '[]'); }
-function saveRegs(r) { localStorage.setItem('guruvio_registrations', JSON.stringify(r)); }
-function getReviews() { return JSON.parse(localStorage.getItem('guruvio_reviews') || '[]'); }
-function saveReviews(r) { localStorage.setItem('guruvio_reviews', JSON.stringify(r)); }
 function getVisits() { return []; }
 function getContacts() { return []; }
 
@@ -607,7 +601,8 @@ async function syncRegistrations() {
     subjects: r.subjects || [], classes: r.classes || [],
     exp: r.exp || '', age: r.age, qual: r.qual || '', edu: r.edu || '',
     bio: r.bio || '', photoUrl: r.photo_url, avClass: r.av_class || 'av1',
-    status: r.status, submittedAt: r.submitted_at
+    status: r.status, submittedAt: r.submitted_at,
+    password: r.password || null
   }));
   localStorage.setItem('guruvio_registrations', JSON.stringify(mapped));
   return mapped;
@@ -680,18 +675,7 @@ function doLogout() {
 }
 
 // ---- DATA ----
-const DEFAULT_TUTORS = [
-  { id:1, name:"Arjun Menon", exp:"8 years", subjects:["Mathematics","Physics"], classes:["Class 9–10","Plus One","Plus Two"], area:"Pattom", rating:4.9, phone:"919400000001", verified:true, topRated:true, active:true, avatar:"A", avClass:"av1" },
-  { id:2, name:"Priya Nair", exp:"5 years", subjects:["English","Social Science"], classes:["Class 6–8","Class 9–10"], area:"Kowdiar", rating:4.8, phone:"919400000002", verified:true, topRated:false, active:true, avatar:"P", avClass:"av2" },
-  { id:3, name:"Rahul Krishnan", exp:"10 years", subjects:["Chemistry","Biology"], classes:["Plus One","Plus Two"], area:"Kazhakuttam", rating:5.0, phone:"919400000003", verified:true, topRated:true, active:true, avatar:"R", avClass:"av3" },
-  { id:4, name:"Sreelakshmi V", exp:"6 years", subjects:["Malayalam","Hindi"], classes:["Class 1–5","Class 6–8"], area:"Sasthamangalam", rating:4.7, phone:"919400000004", verified:true, topRated:false, active:true, avatar:"S", avClass:"av4" },
-  { id:5, name:"Vineeth Kumar", exp:"4 years", subjects:["Computer Science","Mathematics"], classes:["Plus One","Plus Two"], area:"Nemom", rating:4.8, phone:"919400000005", verified:true, topRated:false, active:true, avatar:"V", avClass:"av5" },
-  { id:6, name:"Asha Pillai", exp:"12 years", subjects:["Physics","Chemistry"], classes:["Class 9–10","Plus One","Plus Two"], area:"Vanchiyoor", rating:4.9, phone:"919400000006", verified:true, topRated:true, active:true, avatar:"A", avClass:"av6" },
-  { id:7, name:"Deepak Raj", exp:"3 years", subjects:["Mathematics","Accountancy"], classes:["Plus One","Plus Two","Degree"], area:"Peroorkada", rating:4.6, phone:"919400000007", verified:true, topRated:false, active:true, avatar:"D", avClass:"av7" },
-  { id:8, name:"Lekha Suresh", exp:"7 years", subjects:["Biology","Chemistry"], classes:["Class 9–10","Plus One"], area:"Ulloor", rating:4.8, phone:"919400000008", verified:true, topRated:false, active:true, avatar:"L", avClass:"av8" },
-];
-
-function getTutors() {
+function getTutorsfunction getTutors() {
   const s = localStorage.getItem('guruvio_tutors');
   if (!s) { localStorage.setItem('guruvio_tutors', JSON.stringify(DEFAULT_TUTORS)); return DEFAULT_TUTORS; }
   return JSON.parse(s);
@@ -699,8 +683,7 @@ function getTutors() {
 function saveTutors(t) { localStorage.setItem('guruvio_tutors', JSON.stringify(t)); }
 function getRegs() { return JSON.parse(localStorage.getItem('guruvio_registrations') || '[]'); }
 function saveRegs(r) { localStorage.setItem('guruvio_registrations', JSON.stringify(r)); }
-function getVisits() { return JSON.parse(localStorage.getItem('guruvio_visits') || '[]'); }
-function getContacts() { return JSON.parse(localStorage.getItem('guruvio_contacts') || '[]'); }
+// visits and contacts fetched from Supabase directly
 
 // ---- NAV ----
 function showPage(id, el) {
@@ -728,36 +711,83 @@ function toast(msg) {
 }
 
 // ---- DASHBOARD ----
-function renderDashboard() {
-  const tutors = getTutors();
-  const regs = getRegs();
-  const visits = getVisits();
-  const contacts = getContacts();
+async function renderDashboard() {
+  // Show loading zeros first
+  ['d-total','d-active','d-pending','d-rev-pending','d-visits','d-contacts','d-regs'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '...';
+  });
+
+  // Fetch fresh from Supabase in parallel
+  const [tutors, regs, reviews, visits, contacts] = await Promise.all([
+    sbGet('tutors?order=id.asc'),
+    sbGet('registrations?order=submitted_at.desc'),
+    sbGet('reviews?order=created_at.desc'),
+    sbGet('visits?order=visited_at.desc'),
+    sbGet('contacts?order=contacted_at.desc')
+  ]);
+
+  // Save to cache
+  localStorage.setItem('guruvio_tutors', JSON.stringify(tutors.map(t => ({
+    id:t.id, name:t.name, phone:t.phone, area:t.area,
+    subjects:t.subjects||[], classes:t.classes||[],
+    exp:t.exp||'', age:t.age, qual:t.qual||'', edu:t.edu||'',
+    bio:t.bio||'', photoUrl:t.photo_url, avClass:t.av_class||'av1',
+    verified:t.verified, topRated:t.top_rated, active:t.active,
+    rating:t.rating||0, avatar:(t.name||'T')[0].toUpperCase()
+  }))));
+  localStorage.setItem('guruvio_registrations', JSON.stringify(regs.map(r => ({
+    id:r.id, name:r.name, phone:r.phone, area:r.area,
+    subjects:r.subjects||[], classes:r.classes||[],
+    exp:r.exp||'', age:r.age, qual:r.qual||'', edu:r.edu||'',
+    bio:r.bio||'', photoUrl:r.photo_url, avClass:r.av_class||'av1',
+    status:r.status, submittedAt:r.submitted_at
+  }))));
+  localStorage.setItem('guruvio_reviews', JSON.stringify(reviews.map(r => ({
+    id:r.id, tutorId:r.tutor_id, name:r.reviewer_name,
+    text:r.review_text, rating:r.rating, status:r.status, date:r.created_at
+  }))));
+
+  // Update dashboard cards
   document.getElementById('d-total').textContent = tutors.length;
   document.getElementById('d-active').textContent = tutors.filter(t=>t.active).length;
   document.getElementById('d-pending').textContent = regs.filter(r=>r.status==='pending').length;
+  const revPendEl = document.getElementById('d-rev-pending');
+  if (revPendEl) revPendEl.textContent = reviews.filter(r=>r.status==='pending').length;
   document.getElementById('d-visits').textContent = visits.length;
   document.getElementById('d-contacts').textContent = contacts.length;
   document.getElementById('d-regs').textContent = regs.length;
-  document.getElementById('d-rev-pending').textContent = getReviews().filter(r=>r.status==='pending').length;
-  const now = new Date();
-  document.getElementById('dash-time').textContent = 'Last updated: ' + now.toLocaleString();
-  updateRegBadge();
-  renderVisitChart();
+
+  // Update badges
+  const pendingRegs = regs.filter(r=>r.status==='pending').length;
+  const regBadge = document.getElementById('reg-badge');
+  if (pendingRegs > 0) { regBadge.textContent = pendingRegs; regBadge.style.display = 'inline'; }
+  else regBadge.style.display = 'none';
+
+  const pendingRevs = reviews.filter(r=>r.status==='pending').length;
+  const revBadge = document.getElementById('review-badge');
+  if (revBadge) {
+    if (pendingRevs > 0) { revBadge.textContent = pendingRevs; revBadge.style.display = 'inline'; }
+    else revBadge.style.display = 'none';
+  }
+
+  // Charts
+  renderVisitChart(visits);
   renderAreaChart();
 }
-
-function renderVisitChart() {
-  const visits = getVisits();
+function renderVisitChart(visits) {
   const days = {};
   for (let i=6; i>=0; i--) {
     const d = new Date(); d.setDate(d.getDate()-i);
-    const key = d.toISOString().split('T')[0];
-    days[key] = 0;
+    days[d.toISOString().split('T')[0]] = 0;
   }
-  visits.forEach(v => { const k = v.time.split('T')[0]; if(days[k]!==undefined) days[k]++; });
+  (visits||[]).forEach(v => {
+    const k = (v.visited_at||v.time||'').split('T')[0];
+    if (days[k] !== undefined) days[k]++;
+  });
   const max = Math.max(...Object.values(days), 1);
-  document.getElementById('visit-chart').innerHTML = Object.entries(days).map(([d,c]) =>
+  const el = document.getElementById('visit-chart');
+  if (el) el.innerHTML = Object.entries(days).map(([d,c]) =>
     `<div class="bar-row"><div class="bar-label">${d.slice(5)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,c/max*100)}%"></div></div><div class="bar-val">${c}</div></div>`
   ).join('');
 }
@@ -774,7 +804,8 @@ function renderAreaChart() {
 }
 
 // ---- TUTOR TABLE ----
-function renderTutorTable(filter='') {
+async function renderTutorTable(filter='') {
+  if (!filter) await syncTutors();
   let tutors = getTutors();
   if(filter) tutors = tutors.filter(t => t.name.toLowerCase().includes(filter) || t.area.toLowerCase().includes(filter) || t.subjects.join(' ').toLowerCase().includes(filter));
   const tbody = document.getElementById('tutor-tbody');
@@ -940,7 +971,8 @@ function updateReviewBadge() {
   else badge.style.display = 'none';
 }
 
-function filterReviews(status) {
+async function filterReviews(status) {
+  await syncReviews();
   let reviews = getReviews();
   if (status !== 'all') reviews = reviews.filter(r => r.status === status);
   renderReviewsGrid(reviews);
@@ -1023,11 +1055,13 @@ function updateRegBadge() {
   else badge.style.display='none';
 }
 
-function renderRegTable() {
-  const regs = getRegs();
+async function renderRegTable() {
   const tbody = document.getElementById('reg-tbody');
+  tbody.innerHTML = '<tr class="empty-row"><td colspan="7">Loading...</td></tr>';
+  await syncRegistrations();
+  const regs = getRegs();
   if(!regs.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No registrations yet</td></tr>'; return; }
-  tbody.innerHTML = [...regs].reverse().map(r => {
+  tbody.innerHTML = [...regs].map(r => {
     const thumbHtml = r.photoUrl
       ? `<img src="${r.photoUrl}" style="width:28px;height:28px;border-radius:7px;object-fit:cover;vertical-align:middle;margin-right:7px">`
       : `<span style="display:inline-flex;width:28px;height:28px;border-radius:7px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:12px;vertical-align:middle;margin-right:7px">${r.name[0]}</span>`;
@@ -1035,7 +1069,7 @@ function renderRegTable() {
       <td>${thumbHtml}<strong>${r.name}</strong></td>
       <td>${r.phone}</td>
       <td>${r.area}</td>
-      <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.subjects.join(', ')}</td>
+      <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(r.subjects||[]).join(', ')}</td>
       <td>${new Date(r.submittedAt).toLocaleDateString()}</td>
       <td><span class="pill ${r.status==='pending'?'pill-yellow':r.status==='approved'?'pill-green':'pill-red'}">${r.status}</span></td>
       <td>
@@ -1043,6 +1077,7 @@ function renderRegTable() {
       </td>
     </tr>`;
   }).join('');
+  updateRegBadge();
 }
 
 async function approveReg(id) {
@@ -1053,7 +1088,7 @@ async function approveReg(id) {
   // 1. Mark registration as approved in Supabase
   await sbApproveReg(id);
 
-  // 2. Insert new tutor into Supabase tutors table
+  // 2. Insert new tutor into Supabase tutors table (with password)
   await sbPost('tutors', {
     name: reg.name,
     phone: reg.phone,
@@ -1070,7 +1105,8 @@ async function approveReg(id) {
     verified: false,
     top_rated: false,
     active: true,
-    rating: 0
+    rating: 0,
+    password: reg.password || String(reg.phone).replace(/\D/g,'').slice(-4)
   });
 
   // 3. Sync cache
@@ -1160,11 +1196,8 @@ function toggleFeature(btn) {
 
 // ---- INIT ----
 async function initAdmin() {
-  toast('Loading data from Supabase...');
-  await Promise.all([syncTutors(), syncRegistrations(), syncReviews()]);
-  renderDashboard();
-  updateRegBadge();
-  updateReviewBadge();
+  toast('Loading data...');
+  await renderDashboard();
 }
 </script>
 </body>

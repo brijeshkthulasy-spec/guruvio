@@ -479,15 +479,23 @@
         </div>
       </div>
 
-      <div class="edit-card">
-        <h3>Change Password</h3>
+      <div class="edit-card" style="border:1px solid rgba(245,166,35,0.2);background:rgba(245,166,35,0.03)">
+        <h3 style="display:flex;align-items:center;gap:8px">🔒 Change Password</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5">Leave blank if you don't want to change your password. Minimum 6 characters.</p>
         <div class="form-row">
-          <div class="efield"><label>New Password</label><input type="password" id="e-newpass" placeholder="Enter new password"></div>
-          <div class="efield"><label>Confirm Password</label><input type="password" id="e-confirmpass" placeholder="Confirm new password"></div>
+          <div class="efield">
+            <label>New Password</label>
+            <input type="password" id="e-newpass" placeholder="Min 6 characters">
+          </div>
+          <div class="efield">
+            <label>Confirm New Password</label>
+            <input type="password" id="e-confirmpass" placeholder="Repeat new password">
+          </div>
         </div>
+        <button onclick="changePasswordOnly()" style="background:var(--accent);color:#000;border:none;border-radius:10px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;transition:all 0.2s">Update Password</button>
       </div>
 
-      <button class="save-btn" onclick="saveProfile()">Save Changes</button>
+      <button class="save-btn" onclick="saveProfile()">Save Profile Changes</button>
     </div>
 
     <!-- OPTIMISE TAB -->
@@ -563,9 +571,11 @@ async function doLogin() {
     verified: raw.verified, active: raw.active, rating: raw.rating || 0,
     avatar: (raw.name||'T')[0].toUpperCase()
   };
-  const storedPass = localStorage.getItem('tutor_pass_' + tutor.id);
-  const defaultPass = String(phone).replace(/\D/g,'').slice(-4);
-  if (pass !== (storedPass || defaultPass)) { showErr('Incorrect password. Default is last 4 digits of your number.'); return; }
+  // Check password: use Supabase stored password, fallback to last 4 digits
+  const cleanPhone = String(raw.phone).replace(/\D/g,'');
+  const defaultPass = cleanPhone.slice(-4);
+  const correctPass = raw.password || defaultPass;
+  if (pass !== correctPass) { showErr('Incorrect password. Default is last 4 digits of your number.'); return; }
   currentTutor = tutor;
   const cache = getTutors();
   const idx = cache.findIndex(t=>t.id===tutor.id);
@@ -684,19 +694,97 @@ function loadEditForm(tutor) {
   document.querySelectorAll('[id^=ec]').forEach(c => { c.checked = (tutor.classes||[]).includes(c.value); });
 }
 
+async function changePasswordOnly() {
+  const newpass = document.getElementById('e-newpass').value;
+  const confirm = document.getElementById('e-confirmpass').value;
+  if (!newpass) { toast('Please enter a new password.'); return; }
+  if (newpass.length < 6) { toast('Password must be at least 6 characters.'); return; }
+  if (newpass !== confirm) { toast('Passwords do not match!'); return; }
+  try {
+    await sbUpdateTutor(currentTutor.id, { password: newpass });
+    document.getElementById('e-newpass').value = '';
+    document.getElementById('e-confirmpass').value = '';
+    toast('✅ Password updated successfully!');
+  } catch(e) {
+    toast('Error updating password. Try again.');
+  }
+}
+
 async function saveProfile() {
   const tutors = getTutors();
-  const idx = tutors.findIndex(t => t.id === currentTutor.id);
-  if (idx === -1) { toast('Error: tutor not found.'); return; }
+  let safeIdx = tutors.findIndex(t => t.id === currentTutor.id);
+  if (safeIdx === -1) {
+    tutors.push(currentTutor);
+    saveTutors(tutors);
+    safeIdx = tutors.findIndex(t => t.id === currentTutor.id);
+    if (safeIdx === -1) { toast('Error saving profile. Please re-login.'); return; }
+  }
+
   const newpass = document.getElementById('e-newpass').value;
   const confirm = document.getElementById('e-confirmpass').value;
   if (newpass) {
+    if (newpass.length < 6) { toast('Password must be at least 6 characters.'); return; }
     if (newpass !== confirm) { toast('Passwords do not match!'); return; }
-    localStorage.setItem('tutor_pass_' + currentTutor.id, newpass);
+  }
+
+  const expVal = document.getElementById('e-exp').value;
+  tutors[safeIdx] = {
+    ...tutors[safeIdx],
+    name:     document.getElementById('e-name').value.trim() || tutors[safeIdx].name,
+    age:      parseInt(document.getElementById('e-age').value) || tutors[safeIdx].age || null,
+    exp:      expVal ? expVal + ' years' : tutors[safeIdx].exp,
+    area:     document.getElementById('e-area').value || tutors[safeIdx].area,
+    qual:     document.getElementById('e-qual').value,
+    edu:      document.getElementById('e-edu').value,
+    bio:      document.getElementById('e-bio').value,
+    photoUrl: editPhotoUrl || tutors[safeIdx].photoUrl || null,
+    subjects: [...document.querySelectorAll('[id^=es]:checked')].map(c => c.value),
+    classes:  [...document.querySelectorAll('[id^=ec]:checked')].map(c => c.value),
+    avatar:   (document.getElementById('e-name').value.trim() || tutors[safeIdx].name)[0].toUpperCase(),
+  };
+
+  const row = {
+    name: tutors[safeIdx].name, phone: tutors[safeIdx].phone, area: tutors[safeIdx].area,
+    subjects: tutors[safeIdx].subjects, classes: tutors[safeIdx].classes,
+    exp: tutors[safeIdx].exp, age: tutors[safeIdx].age || null,
+    qual: tutors[safeIdx].qual, edu: tutors[safeIdx].edu, bio: tutors[safeIdx].bio,
+    photo_url: tutors[safeIdx].photoUrl || null, av_class: tutors[safeIdx].avClass,
+    ...(newpass ? { password: newpass } : {})
+  };
+
+  await sbUpdateTutor(tutors[safeIdx].id, row);
+  saveTutors(tutors);
+  currentTutor = tutors[safeIdx];
+  document.getElementById('dash-name').textContent = currentTutor.name;
+  document.getElementById('welcome-name').textContent = currentTutor.name.split(' ')[0];
+  document.getElementById('dash-avatar').textContent = currentTutor.name[0].toUpperCase();
+  if (newpass) {
+    document.getElementById('e-newpass').value = '';
+    document.getElementById('e-confirmpass').value = '';
+  }
+  loadOptimise(currentTutor);
+  loadStats(currentTutor);
+  toast('Profile saved successfully!');
+}
+  const tutors = getTutors();
+  const idx = tutors.findIndex(t => t.id === currentTutor.id);
+  if (idx === -1) {
+    // Cache miss — add currentTutor to cache and retry
+    tutors.push(currentTutor);
+    saveTutors(tutors);
+    const newIdx = tutors.findIndex(t => t.id === currentTutor.id);
+    if (newIdx === -1) { toast('Error saving profile. Please re-login.'); return; }
+  }
+  const safeIdx = tutors.findIndex(t => t.id === currentTutor.id);
+  const newpass = document.getElementById('e-newpass').value;
+  const confirm = document.getElementById('e-confirmpass').value;
+  if (newpass) {
+    if (newpass.length < 6) { toast('Password must be at least 6 characters.'); return; }
+    if (newpass !== confirm) { toast('Passwords do not match!'); return; }
   }
   const expVal = document.getElementById('e-exp').value;
-  tutors[idx] = {
-    ...tutors[idx],
+  tutors[safeIdx] = {
+    ...tutors[safeIdx],
     name:     document.getElementById('e-name').value.trim() || tutors[idx].name,
     age:      parseInt(document.getElementById('e-age').value) || tutors[idx].age || null,
     exp:      expVal ? expVal + ' years' : tutors[idx].exp,
@@ -704,21 +792,22 @@ async function saveProfile() {
     qual:     document.getElementById('e-qual').value,
     edu:      document.getElementById('e-edu').value,
     bio:      document.getElementById('e-bio').value,
-    photoUrl: editPhotoUrl || tutors[idx].photoUrl || null,
+    photoUrl: editPhotoUrl || tutors[safeIdx].photoUrl || null,
     subjects: [...document.querySelectorAll('[id^=es]:checked')].map(c => c.value),
     classes:  [...document.querySelectorAll('[id^=ec]:checked')].map(c => c.value),
     avatar:   (document.getElementById('e-name').value.trim() || tutors[idx].name)[0].toUpperCase(),
   };
   const row = {
-    name: tutors[idx].name, phone: tutors[idx].phone, area: tutors[idx].area,
-    subjects: tutors[idx].subjects, classes: tutors[idx].classes,
-    exp: tutors[idx].exp, age: tutors[idx].age || null,
-    qual: tutors[idx].qual, edu: tutors[idx].edu, bio: tutors[idx].bio,
-    photo_url: tutors[idx].photoUrl || null, av_class: tutors[idx].avClass
+    name: tutors[safeIdx].name, phone: tutors[safeIdx].phone, area: tutors[safeIdx].area,
+    subjects: tutors[safeIdx].subjects, classes: tutors[safeIdx].classes,
+    exp: tutors[safeIdx].exp, age: tutors[safeIdx].age || null,
+    qual: tutors[safeIdx].qual, edu: tutors[safeIdx].edu, bio: tutors[safeIdx].bio,
+    photo_url: tutors[safeIdx].photoUrl || null, av_class: tutors[safeIdx].avClass,
+    ...(newpass ? { password: newpass } : {})
   };
-  await sbUpdateTutor(tutors[idx].id, row);
+  await sbUpdateTutor(tutors[safeIdx].id, row);
   saveTutors(tutors);
-  currentTutor = tutors[idx];
+  currentTutor = tutors[safeIdx];
   document.getElementById('dash-name').textContent = currentTutor.name;
   document.getElementById('welcome-name').textContent = currentTutor.name.split(' ')[0];
   document.getElementById('dash-avatar').textContent = currentTutor.name[0].toUpperCase();

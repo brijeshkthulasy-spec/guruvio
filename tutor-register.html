@@ -200,6 +200,21 @@
       </div>
     </div>
 
+    <div class="form-section">
+      <h3>🔒 Set Your Login Password</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.6">You'll use this password to log in to your Guruvio tutor dashboard. If you skip this, your default password will be the last 4 digits of your phone number.</p>
+      <div class="field-row">
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="r-password" placeholder="Min 6 characters">
+        </div>
+        <div class="field">
+          <label>Confirm Password</label>
+          <input type="password" id="r-confirm-password" placeholder="Repeat password">
+        </div>
+      </div>
+    </div>
+
     <button class="submit-btn" onclick="submitRegistration()">Submit My Profile for Review</button>
   </div>
 
@@ -236,45 +251,50 @@ async function submitRegistration() {
   const exp   = document.getElementById('r-exp').value;
   const qual  = document.getElementById('r-qual').value;
   const age   = document.getElementById('r-age').value;
+  const password = document.getElementById('r-password').value;
+  const confirmPw = document.getElementById('r-confirm-password').value;
   const subjects = [...document.querySelectorAll('[id^=s]:checked')].map(c=>c.value);
   const classes  = [...document.querySelectorAll('[id^=c]:checked')].map(c=>c.value);
 
   if (!name||!phone||!area||!exp||!qual||!subjects.length||!classes.length) {
     alert('Please fill all required fields and select at least one subject and class.'); return;
   }
+  if (password && password.length < 6) {
+    alert('Password must be at least 6 characters.'); return;
+  }
+  if (password && password !== confirmPw) {
+    alert('Passwords do not match.'); return;
+  }
 
-  const reg = {
-    id: Date.now(),
-    name, phone, email: document.getElementById('r-email').value,
-    area, exp: exp+' years', qual,
-    age: age ? parseInt(age) : null,
-    edu: document.getElementById('r-edu').value,
-    bio: document.getElementById('r-bio').value,
-    photoUrl: uploadedPhotoUrl,
-    subjects, classes,
-    status: 'pending',
-    submittedAt: new Date().toISOString(),
-    rating: 0, verified: false, topRated: false, active: false,
-    avatar: name[0].toUpperCase(),
-    avClass: ['av1','av2','av3','av4','av5','av6','av7','av8'][Math.floor(Math.random()*8)]
-  };
+  // Default password = last 4 digits of phone if not set
+  const cleanPhone = phone.replace(/\D/g,'');
+  const finalPassword = password || cleanPhone.slice(-4);
 
   const row = {
-    name: reg.name, phone: reg.phone, email: reg.email || null,
-    area: reg.area, exp: reg.exp, age: reg.age || null,
-    qual: reg.qual, edu: reg.edu || null, bio: reg.bio || null,
-    photo_url: reg.photoUrl || null,
-    subjects: reg.subjects, classes: reg.classes,
-    av_class: reg.avClass, status: 'pending'
+    name, phone, email: document.getElementById('r-email').value || null,
+    area, exp: exp+' years', qual,
+    age: age ? parseInt(age) : null,
+    edu: document.getElementById('r-edu').value || null,
+    bio: document.getElementById('r-bio').value || null,
+    photo_url: uploadedPhotoUrl || null,
+    subjects, classes,
+    av_class: ['av1','av2','av3','av4','av5','av6','av7','av8'][Math.floor(Math.random()*8)],
+    status: 'pending',
+    password: finalPassword
   };
-  await fetch(`${SUPA_URL}/rest/v1/registrations`, {
-    method: 'POST',
-    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-    body: JSON.stringify(row)
-  });
 
-  document.getElementById('reg-form').style.display = 'none';
-  document.getElementById('success-box').style.display = 'block';
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/registrations`, {
+      method: 'POST',
+      headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(row)
+    });
+    if (!res.ok) { const err = await res.text(); throw new Error(err); }
+    document.getElementById('reg-form').style.display = 'none';
+    document.getElementById('success-box').style.display = 'block';
+  } catch(e) {
+    alert('Submission failed. Please try again.\n' + e.message);
+  }
 }
 </script>
 </body>
