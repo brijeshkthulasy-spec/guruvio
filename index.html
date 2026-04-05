@@ -630,16 +630,29 @@ async function sbPost(table, data) {
 
 let _tutorCache = [];
 
+const SAMPLE_TUTORS = [
+  { id:1, name:"Arjun Menon", exp:"8 years", subjects:["Mathematics","Physics"], classes:["Class 9–10","Plus One","Plus Two"], area:"Pattom", rating:4.9, phone:"919400000001", verified:true, active:true, avatar:"A", avClass:"av1" },
+  { id:2, name:"Priya Nair", exp:"5 years", subjects:["English","Social Science"], classes:["Class 6–8","Class 9–10"], area:"Kowdiar", rating:4.8, phone:"919400000002", verified:true, active:true, avatar:"P", avClass:"av2" },
+  { id:3, name:"Rahul Krishnan", exp:"10 years", subjects:["Chemistry","Biology"], classes:["Plus One","Plus Two"], area:"Kazhakuttam", rating:5.0, phone:"919400000003", verified:true, active:true, avatar:"R", avClass:"av3" },
+  { id:4, name:"Sreelakshmi V", exp:"6 years", subjects:["Malayalam","Hindi"], classes:["Class 1–5","Class 6–8"], area:"Sasthamangalam", rating:4.7, phone:"919400000004", verified:true, active:true, avatar:"S", avClass:"av4" },
+  { id:5, name:"Vineeth Kumar", exp:"4 years", subjects:["Computer Science","Mathematics"], classes:["Plus One","Plus Two"], area:"Nemom", rating:4.8, phone:"919400000005", verified:true, active:true, avatar:"V", avClass:"av5" },
+];
+
 async function loadTutors() {
-  const data = await sbGet('tutors?active=eq.true&order=id.asc');
-  _tutorCache = data.map(t => ({
-    id: t.id, name: t.name, phone: t.phone, area: t.area,
-    subjects: t.subjects || [], classes: t.classes || [],
-    exp: t.exp || '—', age: t.age, qual: t.qual, edu: t.edu,
-    bio: t.bio, photoUrl: t.photo_url,
-    verified: t.verified, active: t.active, rating: t.rating || 0,
-    avatar: (t.name || 'T')[0].toUpperCase(), avClass: t.av_class || 'av1'
-  }));
+  try {
+    const data = await sbGet('tutors?active=eq.true&order=id.asc');
+    const mapped = data.map(t => ({
+      id: t.id, name: t.name, phone: t.phone, area: t.area,
+      subjects: t.subjects || [], classes: t.classes || [],
+      exp: t.exp || '—', age: t.age, qual: t.qual, edu: t.edu,
+      bio: t.bio, photoUrl: t.photo_url,
+      verified: t.verified, active: t.active, rating: t.rating || 0,
+      avatar: (t.name || 'T')[0].toUpperCase(), avClass: t.av_class || 'av1'
+    }));
+    _tutorCache = mapped.length ? mapped : SAMPLE_TUTORS;
+  } catch {
+    _tutorCache = SAMPLE_TUTORS;
+  }
   return _tutorCache;
 }
 
@@ -654,6 +667,104 @@ let selectedRating = 0;
 async function getApprovedReviews(tutorId) {
   return sbGet(`reviews?tutor_id=eq.${tutorId}&status=eq.approved&order=created_at.desc`);
 }
+
+// ---- WHATSAPP ----
+function waLink(phone, name) {
+  let clean = String(phone).replace(/\D/g, '');
+  if (clean.startsWith('0')) clean = clean.slice(1);
+  if (clean.length === 10) clean = '91' + clean;
+  const msg = encodeURIComponent(`Hello ${name}, I found your profile on Guruvio. I need a tutor for my child and your profile looks great. Can we talk about availability and charges?`);
+  return `https://wa.me/${clean}?text=${msg}`;
+}
+function waIcon() {
+  return `<svg class="wa-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.549 4.122 1.512 5.862L.057 23.428a.5.5 0 0 0 .614.614l5.566-1.455A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.946a9.94 9.94 0 0 1-5.073-1.39l-.364-.215-3.773.988.988-3.774-.215-.364A9.94 9.94 0 0 1 2.054 12C2.054 6.497 6.497 2.054 12 2.054S21.946 6.497 21.946 12 17.503 21.946 12 21.946z"/></svg>`;
+}
+
+// ---- RENDER CARDS ----
+function renderCard(t) {
+  const avatarHtml = t.photoUrl
+    ? `<div class="avatar ${t.avClass}"><img src="${t.photoUrl}" alt="${t.name}"></div>`
+    : `<div class="avatar ${t.avClass}">${t.avatar}</div>`;
+  return `
+  <div class="tutor-card visible" data-id="${t.id}" data-name="${t.name}" data-subjects="${(t.subjects||[]).join(',')}" data-area="${t.area}" data-classes="${(t.classes||[]).join(',')}">
+    <div class="card-top">
+      ${avatarHtml}
+      <div><div class="tutor-name">${t.name}</div><div class="tutor-exp">${t.exp} experience</div></div>
+    </div>
+    <div class="badges">
+      ${t.verified ? '<span class="badge bv">✓ Verified</span>' : ''}
+      ${t.active   ? '<span class="badge ba">● Active</span>'   : ''}
+    </div>
+    <div class="subjects">
+      ${(t.subjects||[]).map(s=>`<span class="stag">${s}</span>`).join('')}
+      ${(t.classes||[]).slice(0,2).map(c=>`<span class="stag">${c}</span>`).join('')}
+    </div>
+    <div class="card-footer">
+      <div class="tutor-meta"><strong>${t.area}</strong> · Home visits</div>
+    </div>
+    <button class="view-profile-btn" onclick="openProfile('${t.id}')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      View Full Profile
+    </button>
+    <a href="${waLink(t.phone, t.name)}" class="wa-btn" target="_blank" onclick="logContact(${t.id})">
+      ${waIcon()} Connect on WhatsApp
+    </a>
+  </div>`;
+}
+
+function renderTutors(tutors) {
+  const grid  = document.getElementById('tutors-grid');
+  const noRes = document.getElementById('no-results');
+  const visible = tutors.filter(t => t.active);
+  grid.innerHTML = visible.length
+    ? visible.map(renderCard).join('') + noRes.outerHTML
+    : noRes.outerHTML;
+  document.getElementById('no-results').style.display = visible.length ? 'none' : 'block';
+  document.querySelectorAll('.tutor-card[data-id]').forEach(el => cardObserver.observe(el));
+}
+
+function onFilterChange(pillId, sel) {
+  const pill = document.getElementById(pillId);
+  if (sel.value) pill.classList.add('active');
+  else pill.classList.remove('active');
+}
+
+function clearFilter(selectId, pillId) {
+  document.getElementById(selectId).value = '';
+  document.getElementById(pillId).classList.remove('active');
+  filterTutors();
+}
+
+function filterTutors() {
+  const subj = document.getElementById('filter-subject').value;
+  const area = document.getElementById('filter-area').value;
+  const cls  = document.getElementById('filter-class').value;
+  const filtered = _tutorCache.filter(t => {
+    if (!t.active) return false;
+    if (subj && !(t.subjects||[]).includes(subj)) return false;
+    if (area && t.area !== area) return false;
+    if (cls  && !(t.classes||[]).includes(cls)) return false;
+    return true;
+  });
+  renderTutors(filtered);
+}
+
+// Scroll reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Track card views
+const cardObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.dataset.id;
+      if (id) logProfileView(id);
+      cardObserver.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.5 });
 
 // ---- PROFILE MODAL ----
 const WA_SVG = `<svg style="width:18px;height:18px;fill:#fff;flex-shrink:0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.549 4.122 1.512 5.862L.057 23.428a.5.5 0 0 0 .614.614l5.566-1.455A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.946a9.94 9.94 0 0 1-5.073-1.39l-.364-.215-3.773.988.988-3.774-.215-.364A9.94 9.94 0 0 1 2.054 12C2.054 6.497 6.497 2.054 12 2.054S21.946 6.497 21.946 12 17.503 21.946 12 21.946z"/></svg>`;
@@ -703,7 +814,7 @@ async function openProfile(id) {
   // Reviews HTML
   const reviewsHtml = mappedReviews.length
     ? mappedReviews.map(r => `
-      <div style="background:rgba(255,255,255,0.03);"border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
           <span style="font-size:13px;font-weight:600;color:#f7f4ee">${r.name}</span>
           <span style="color:#f5a623;font-size:12px">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
