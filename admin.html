@@ -282,8 +282,7 @@
     <input type="text" class="login-field" id="login-user" placeholder="Username" autocomplete="off">
     <input type="password" class="login-field" id="login-pass" placeholder="Password">
     <button class="login-btn" onclick="doLogin()">Sign In</button>
-    <div class="login-err" id="login-err">Invalid credentials. Try admin / guruvio123</div>
-    <div style="font-size:11px;color:var(--muted);margin-top:16px">Default: admin / guruvio123</div>
+    <div class="login-err" id="login-err">Invalid credentials. Please try again.</div>
   </div>
 </div>
 
@@ -452,9 +451,7 @@
       </div>
       <div class="config-section">
         <h3>Admin Credentials</h3>
-        <div class="config-field"><label>Username</label><input class="config-input" id="cfg-user" value="admin"></div>
-        <div class="config-field"><label>New Password</label><input class="config-input" type="password" id="cfg-newpass" placeholder="Leave blank to keep current"></div>
-        <button class="save-btn" onclick="saveCreds()">Update Credentials</button>
+        <div class="config-field"><label>Admin Access</label><input class="config-input" value="Credentials are securely stored" disabled style="color:var(--muted);cursor:not-allowed"></div>
       </div>
     </div>
 
@@ -660,13 +657,20 @@ async function sbPatchQuery(table, query, data) {
 // ============================================
 // AUTH
 // ============================================
-let ADMIN_USER = localStorage.getItem('guruvio_admin_user') || 'admin';
-let ADMIN_PASS = localStorage.getItem('guruvio_admin_pass') || 'guruvio123';
+// Credentials stored as SHA-256 hashes only — plain text never in source
+const ADMIN_USER_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
+const ADMIN_PASS_HASH = 'a4ca1d561ae23d753003579cbbd5a19d295d4ad61ab4e97888ae7ca74e1e8cfe';
 
-function doLogin() {
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin() {
   const u = document.getElementById('login-user').value.trim();
   const p = document.getElementById('login-pass').value;
-  if (u === ADMIN_USER && p === ADMIN_PASS) {
+  const [uh, ph] = await Promise.all([sha256(u), sha256(p)]);
+  if (uh === ADMIN_USER_HASH && ph === ADMIN_PASS_HASH) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-layout').style.display = 'flex';
     initAdmin();
@@ -1180,7 +1184,6 @@ function loadConfig() {
   document.getElementById('cfg-tagline').value  = cfg.tagline  || 'Find Your Tutor in Trivandrum';
   document.getElementById('cfg-email').value    = cfg.email    || 'hello@guruvio.com';
   document.getElementById('cfg-wa').value       = cfg.wa       || '919400000000';
-  document.getElementById('cfg-user').value     = ADMIN_USER;
 }
 
 function saveConfig() {
@@ -1195,11 +1198,7 @@ function saveConfig() {
 }
 
 function saveCreds() {
-  const user    = document.getElementById('cfg-user').value.trim();
-  const newpass = document.getElementById('cfg-newpass').value;
-  if (user)    { ADMIN_USER = user;    localStorage.setItem('guruvio_admin_user', user); }
-  if (newpass) { ADMIN_PASS = newpass; localStorage.setItem('guruvio_admin_pass', newpass); }
-  toast('Credentials updated!');
+  toast('Credentials are secured and cannot be changed from here.');
 }
 
 function toggleFeature(btn) { btn.classList.toggle('on'); }
