@@ -608,343 +608,291 @@
 </footer>
 
 <script>
-// ---- SUPABASE CONFIG ----
+// ============================================================
+// SUPABASE
+// ============================================================
 const SUPA_URL = 'https://lmqsoxrnxrktzosmwkwd.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI';
-const H = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
 
 async function sbGet(path) {
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: H });
-    return r.ok ? r.json() : [];
-  } catch { return []; }
+    const r = await fetch(SUPA_URL + '/rest/v1/' + path, {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
+    });
+    if (!r.ok) return [];
+    return await r.json();
+  } catch(e) { return []; }
 }
+
 async function sbPost(table, data) {
   try {
-    await fetch(`${SUPA_URL}/rest/v1/${table}`, {
-      method: 'POST', headers: { ...H, 'Prefer': 'return=minimal' },
+    await fetch(SUPA_URL + '/rest/v1/' + table, {
+      method: 'POST',
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify(data)
     });
-  } catch {}
+  } catch(e) {}
 }
 
-let _tutorCache = [];
+// ============================================================
+// TUTOR DATA
+// ============================================================
+var _tutors = [];
 
-const SAMPLE_TUTORS = [
-  { id:1, name:"Arjun Menon", exp:"8 years", subjects:["Mathematics","Physics"], classes:["Class 9–10","Plus One","Plus Two"], area:"Pattom", rating:4.9, phone:"919400000001", verified:true, active:true, avatar:"A", avClass:"av1" },
-  { id:2, name:"Priya Nair", exp:"5 years", subjects:["English","Social Science"], classes:["Class 6–8","Class 9–10"], area:"Kowdiar", rating:4.8, phone:"919400000002", verified:true, active:true, avatar:"P", avClass:"av2" },
-  { id:3, name:"Rahul Krishnan", exp:"10 years", subjects:["Chemistry","Biology"], classes:["Plus One","Plus Two"], area:"Kazhakuttam", rating:5.0, phone:"919400000003", verified:true, active:true, avatar:"R", avClass:"av3" },
-  { id:4, name:"Sreelakshmi V", exp:"6 years", subjects:["Malayalam","Hindi"], classes:["Class 1–5","Class 6–8"], area:"Sasthamangalam", rating:4.7, phone:"919400000004", verified:true, active:true, avatar:"S", avClass:"av4" },
-  { id:5, name:"Vineeth Kumar", exp:"4 years", subjects:["Computer Science","Mathematics"], classes:["Plus One","Plus Two"], area:"Nemom", rating:4.8, phone:"919400000005", verified:true, active:true, avatar:"V", avClass:"av5" },
+var SAMPLE_TUTORS = [
+  { id:1, name:'Arjun Menon',   phone:'919400000001', area:'Pattom',         subjects:['Mathematics','Physics'],        classes:['Class 9-10','Plus One','Plus Two'], exp:'8 years',  verified:true, active:true, rating:4.9, avClass:'av1', avatar:'A' },
+  { id:2, name:'Priya Nair',    phone:'919400000002', area:'Kowdiar',        subjects:['English','Social Science'],     classes:['Class 6-8','Class 9-10'],          exp:'5 years',  verified:true, active:true, rating:4.8, avClass:'av2', avatar:'P' },
+  { id:3, name:'Rahul Krishnan',phone:'919400000003', area:'Kazhakuttam',    subjects:['Chemistry','Biology'],          classes:['Plus One','Plus Two'],             exp:'10 years', verified:true, active:true, rating:5.0, avClass:'av3', avatar:'R' },
+  { id:4, name:'Sreelakshmi V', phone:'919400000004', area:'Sasthamangalam', subjects:['Malayalam','Hindi'],            classes:['Class 1-5','Class 6-8'],           exp:'6 years',  verified:true, active:true, rating:4.7, avClass:'av4', avatar:'S' },
+  { id:5, name:'Vineeth Kumar', phone:'919400000005', area:'Nemom',          subjects:['Computer Science','Mathematics'],classes:['Plus One','Plus Two'],            exp:'4 years',  verified:true, active:true, rating:4.8, avClass:'av5', avatar:'V' }
 ];
 
 async function loadTutors() {
-  try {
-    const data = await sbGet('tutors?active=eq.true&order=id.asc');
-    const mapped = data.map(t => ({
-      id: t.id, name: t.name, phone: t.phone, area: t.area,
-      subjects: t.subjects || [], classes: t.classes || [],
-      exp: t.exp || '—', age: t.age, qual: t.qual, edu: t.edu,
-      bio: t.bio, photoUrl: t.photo_url,
-      verified: t.verified, active: t.active, rating: t.rating || 0,
-      avatar: (t.name || 'T')[0].toUpperCase(), avClass: t.av_class || 'av1'
-    }));
-    _tutorCache = mapped.length ? mapped : SAMPLE_TUTORS;
-  } catch {
-    _tutorCache = SAMPLE_TUTORS;
+  var data = await sbGet('tutors?active=eq.true&order=id.asc');
+  if (data && data.length > 0) {
+    _tutors = data.map(function(t) {
+      return {
+        id: t.id, name: t.name, phone: t.phone, area: t.area,
+        subjects: t.subjects || [], classes: t.classes || [],
+        exp: t.exp || '', age: t.age, qual: t.qual, edu: t.edu,
+        bio: t.bio, photoUrl: t.photo_url,
+        verified: t.verified, active: t.active, rating: t.rating || 0,
+        avatar: (t.name || 'T')[0].toUpperCase(),
+        avClass: t.av_class || 'av1'
+      };
+    });
+  } else {
+    _tutors = SAMPLE_TUTORS;
   }
-  return _tutorCache;
+  return _tutors;
 }
 
-function logVisit() { sbPost('visits', { page: 'home' }); }
-function logContact(tutorId) { sbPost('contacts', { tutor_id: tutorId }); }
-function logProfileView(tutorId) { sbPost('profile_views', { tutor_id: tutorId }); }
+function logVisit()           { sbPost('visits',        { page: 'home' }); }
+function logContact(tid)      { sbPost('contacts',      { tutor_id: tid }); }
+function logProfileView(tid)  { sbPost('profile_views', { tutor_id: tid }); }
 
-// ---- REVIEWS ----
-let currentReviewTutorId = null;
-let selectedRating = 0;
-
-async function getApprovedReviews(tutorId) {
-  return sbGet(`reviews?tutor_id=eq.${tutorId}&status=eq.approved&order=created_at.desc`);
+// ============================================================
+// PHONE CLEANING
+// ============================================================
+function cleanPhone(phone) {
+  var c = String(phone || '').replace(/\D/g, '');
+  if (c.charAt(0) === '0') c = c.slice(1);
+  if (c.length === 10) c = '91' + c;
+  return c;
 }
 
-// ---- WHATSAPP ----
-function waClean(phone) {
-  let clean = String(phone || '').replace(/\D/g, '');
-  if (clean.startsWith('0')) clean = clean.slice(1);
-  if (clean.startsWith('91') && clean.length === 12) return clean;
-  if (clean.length === 10) return '91' + clean;
-  if (clean.length === 11 && clean.startsWith('0')) return '91' + clean.slice(1);
-  return clean;
-}
-
-function waLink(phone, name) {
-  const clean = waClean(phone);
-  const msg = encodeURIComponent('Hello ' + name + ', I found your profile on Guruvio. I need a tutor for my child and your profile looks great. Can we talk about availability and charges?');
-  return 'https://wa.me/' + clean + '?text=' + msg;
-}
-
-function openWhatsApp(phone, name, tutorId) {
-  const clean = waClean(phone);
-  if (!clean || clean.length < 10) {
+// ============================================================
+// WHATSAPP
+// ============================================================
+function openWhatsApp(tutorId) {
+  var t = null;
+  for (var i = 0; i < _tutors.length; i++) {
+    if (String(_tutors[i].id) === String(tutorId)) { t = _tutors[i]; break; }
+  }
+  if (!t) { alert('Tutor not found.'); return; }
+  var phone = cleanPhone(t.phone);
+  if (!phone || phone.length < 10) {
     alert('This tutor has not added a valid WhatsApp number yet.');
     return;
   }
-  logContact(tutorId);
-  const msg = encodeURIComponent('Hello ' + name + ', I found your profile on Guruvio. I need a tutor for my child and your profile looks great. Can we talk about availability and charges?');
-  const url = 'https://wa.me/' + clean + '?text=' + msg;
-  window.open(url, '_blank');
+  logContact(t.id);
+  var msg = encodeURIComponent('Hello ' + t.name + ', I found your profile on Guruvio. I need a tutor for my child and your profile looks great. Can we talk about availability and charges?');
+  window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
 }
+
+// ============================================================
+// RENDER CARDS
+// ============================================================
+var AV_COLORS = {
+  av1: 'background:linear-gradient(135deg,#f5a623,#e05c2a)',
+  av2: 'background:linear-gradient(135deg,#00c9a7,#0095ff)',
+  av3: 'background:linear-gradient(135deg,#a855f7,#ec4899)',
+  av4: 'background:linear-gradient(135deg,#10b981,#3b82f6)',
+  av5: 'background:linear-gradient(135deg,#f59e0b,#ef4444)',
+  av6: 'background:linear-gradient(135deg,#6366f1,#8b5cf6)',
+  av7: 'background:linear-gradient(135deg,#06b6d4,#6366f1)',
+  av8: 'background:linear-gradient(135deg,#84cc16,#14b8a6)'
+};
+
 function waIcon() {
-  return `<svg class="wa-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.549 4.122 1.512 5.862L.057 23.428a.5.5 0 0 0 .614.614l5.566-1.455A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.946a9.94 9.94 0 0 1-5.073-1.39l-.364-.215-3.773.988.988-3.774-.215-.364A9.94 9.94 0 0 1 2.054 12C2.054 6.497 6.497 2.054 12 2.054S21.946 6.497 21.946 12 17.503 21.946 12 21.946z"/></svg>`;
+  return '<svg style="width:17px;height:17px;fill:#fff;flex-shrink:0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.549 4.122 1.512 5.862L.057 23.428a.5.5 0 0 0 .614.614l5.566-1.455A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.946a9.94 9.94 0 0 1-5.073-1.39l-.364-.215-3.773.988.988-3.774-.215-.364A9.94 9.94 0 0 1 2.054 12C2.054 6.497 6.497 2.054 12 2.054S21.946 6.497 21.946 12 17.503 21.946 12 21.946z"/></svg>';
 }
 
-// ---- RENDER CARDS ----
 function renderCard(t) {
-  const avatarHtml = t.photoUrl
-    ? `<div class="avatar ${t.avClass}"><img src="${t.photoUrl}" alt="${t.name}"></div>`
-    : `<div class="avatar ${t.avClass}">${t.avatar}</div>`;
-  return `
-  <div class="tutor-card visible" data-id="${t.id}" data-name="${t.name}" data-subjects="${(t.subjects||[]).join(',')}" data-area="${t.area}" data-classes="${(t.classes||[]).join(',')}">
-    <div class="card-top">
-      ${avatarHtml}
-      <div><div class="tutor-name">${t.name}</div><div class="tutor-exp">${t.exp} experience</div></div>
-    </div>
-    <div class="badges">
-      ${t.verified ? '<span class="badge bv">✓ Verified</span>' : ''}
-      ${t.active   ? '<span class="badge ba">● Active</span>'   : ''}
-    </div>
-    <div class="subjects">
-      ${(t.subjects||[]).map(s=>`<span class="stag">${s}</span>`).join('')}
-      ${(t.classes||[]).slice(0,2).map(c=>`<span class="stag">${c}</span>`).join('')}
-    </div>
-    <div class="card-footer">
-      <div class="tutor-meta"><strong>${t.area}</strong> · Home visits</div>
-    </div>
-    <button class="view-profile-btn" onclick="openProfile('${t.id}')">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      View Full Profile
-    </button>
-    <button class="wa-btn" onclick="openWhatsApp('${t.phone}', '${t.name.replace(/'/g,"\\'")}', ${t.id})">
-      ${waIcon()} Connect on WhatsApp
-    </button>
-  </div>`;
+  var av = t.photoUrl
+    ? '<div class="avatar ' + t.avClass + '"><img src="' + t.photoUrl + '" alt="' + t.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:14px"></div>'
+    : '<div class="avatar ' + t.avClass + '">' + t.avatar + '</div>';
+  var badges = (t.verified ? '<span class="badge bv">&#10003; Verified</span>' : '') +
+               (t.active   ? '<span class="badge ba">&#9679; Active</span>'    : '');
+  var tags = (t.subjects||[]).map(function(s){ return '<span class="stag">' + s + '</span>'; }).join('') +
+             (t.classes||[]).slice(0,2).map(function(c){ return '<span class="stag">' + c + '</span>'; }).join('');
+  return '<div class="tutor-card visible" data-id="' + t.id + '">' +
+    '<div class="card-top">' + av + '<div><div class="tutor-name">' + t.name + '</div><div class="tutor-exp">' + t.exp + ' experience</div></div></div>' +
+    '<div class="badges">' + badges + '</div>' +
+    '<div class="subjects">' + tags + '</div>' +
+    '<div class="card-footer"><div class="tutor-meta"><strong>' + t.area + '</strong> &middot; Home visits</div></div>' +
+    '<button class="view-profile-btn" onclick="openProfile(' + t.id + ')">' +
+      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+      ' View Full Profile' +
+    '</button>' +
+    '<button class="wa-btn" onclick="openWhatsApp(' + t.id + ')">' + waIcon() + ' Connect on WhatsApp</button>' +
+    '</div>';
 }
 
-function renderTutors(tutors) {
-  const grid  = document.getElementById('tutors-grid');
-  const noRes = document.getElementById('no-results');
-  const visible = tutors.filter(t => t.active);
-  grid.innerHTML = visible.length
-    ? visible.map(renderCard).join('') + noRes.outerHTML
-    : noRes.outerHTML;
-  document.getElementById('no-results').style.display = visible.length ? 'none' : 'block';
-  document.querySelectorAll('.tutor-card[data-id]').forEach(el => cardObserver.observe(el));
+function renderTutors(list) {
+  var grid  = document.getElementById('tutors-grid');
+  var noRes = document.getElementById('no-results');
+  var visible = list.filter(function(t){ return t.active; });
+  if (!visible.length) { grid.innerHTML = noRes.outerHTML; document.getElementById('no-results').style.display='block'; return; }
+  grid.innerHTML = visible.map(renderCard).join('') + noRes.outerHTML;
+  document.getElementById('no-results').style.display = 'none';
 }
 
+// ============================================================
+// FILTERS
+// ============================================================
 function onFilterChange(pillId, sel) {
-  const pill = document.getElementById(pillId);
-  if (sel.value) pill.classList.add('active');
-  else pill.classList.remove('active');
+  var pill = document.getElementById(pillId);
+  if (sel.value) pill.classList.add('active'); else pill.classList.remove('active');
 }
-
 function clearFilter(selectId, pillId) {
   document.getElementById(selectId).value = '';
   document.getElementById(pillId).classList.remove('active');
   filterTutors();
 }
-
 function filterTutors() {
-  const subj = document.getElementById('filter-subject').value;
-  const area = document.getElementById('filter-area').value;
-  const cls  = document.getElementById('filter-class').value;
-  const filtered = _tutorCache.filter(t => {
+  var subj = document.getElementById('filter-subject').value;
+  var area = document.getElementById('filter-area').value;
+  var cls  = document.getElementById('filter-class').value;
+  var filtered = _tutors.filter(function(t) {
     if (!t.active) return false;
-    if (subj && !(t.subjects||[]).includes(subj)) return false;
+    if (subj && (t.subjects||[]).indexOf(subj) === -1) return false;
     if (area && t.area !== area) return false;
-    if (cls  && !(t.classes||[]).includes(cls)) return false;
+    if (cls  && (t.classes||[]).indexOf(cls) === -1) return false;
     return true;
   });
   renderTutors(filtered);
 }
 
-// Scroll reveal
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
-}, { threshold: 0.08 });
-document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+// ============================================================
+// PROFILE MODAL — opens instantly, loads reviews after
+// ============================================================
+function openProfile(tutorId) {
+  var t = null;
+  for (var i = 0; i < _tutors.length; i++) {
+    if (_tutors[i].id == tutorId) { t = _tutors[i]; break; }
+  }
+  if (!t) { console.warn('Tutor not found:', tutorId); return; }
 
-// Track card views
-const cardObserver = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      const id = e.target.dataset.id;
-      if (id) logProfileView(id);
-      cardObserver.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.5 });
-
-// ---- PROFILE MODAL ----
-const WA_SVG = `<svg style="width:18px;height:18px;fill:#fff;flex-shrink:0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.549 4.122 1.512 5.862L.057 23.428a.5.5 0 0 0 .614.614l5.566-1.455A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.946a9.94 9.94 0 0 1-5.073-1.39l-.364-.215-3.773.988.988-3.774-.215-.364A9.94 9.94 0 0 1 2.054 12C2.054 6.497 6.497 2.054 12 2.054S21.946 6.497 21.946 12 17.503 21.946 12 21.946z"/></svg>`;
-
-async function openProfile(id) {
-  const t = _tutorCache.find(x => x.id == id);
-  if (!t) return;
   logProfileView(t.id);
-  currentReviewTutorId = t.id;
-  selectedRating = 0;
 
-  // Approved reviews for this tutor
-  const reviews = await getApprovedReviews(t.id);
-  const mappedReviews = reviews.map(r => ({
-    name: r.reviewer_name, text: r.review_text,
-    rating: r.rating, date: r.created_at
-  }));
+  var avStyle = AV_COLORS[t.avClass] || AV_COLORS.av1;
+  var photoHtml = t.photoUrl
+    ? '<img src="' + t.photoUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:16px">'
+    : '<span style="font-size:26px;font-weight:700;color:#fff">' + t.avatar + '</span>';
 
-  // Avatar / photo
-  const photoHtml = t.photoUrl
-    ? `<img src="${t.photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:16px" alt="${t.name}">`
-    : `<span style="font-size:26px;font-weight:700;font-family:'Playfair Display',serif;color:#fff">${t.avatar || t.name[0]}</span>`;
+  var infoRows = '';
+  if (t.area)  infoRows += '<div style="display:flex;gap:10px;margin-bottom:10px"><span style="font-size:16px;width:22px">&#128205;</span><div><div style="font-size:13px;font-weight:500;color:#f7f4ee">' + t.area + ', Trivandrum</div><div style="font-size:11px;color:#9090a8">Location</div></div></div>';
+  infoRows += '<div style="display:flex;gap:10px;margin-bottom:10px"><span style="font-size:16px;width:22px">&#127968;</span><div><div style="font-size:13px;font-weight:500;color:#f7f4ee">Home visits &middot; Online available</div><div style="font-size:11px;color:#9090a8">Mode</div></div></div>';
+  if (t.age)   infoRows += '<div style="display:flex;gap:10px;margin-bottom:10px"><span style="font-size:16px;width:22px">&#128100;</span><div><div style="font-size:13px;font-weight:500;color:#f7f4ee">' + t.age + ' years</div><div style="font-size:11px;color:#9090a8">Age</div></div></div>';
+  if (t.qual)  infoRows += '<div style="display:flex;gap:10px;margin-bottom:10px"><span style="font-size:16px;width:22px">&#127891;</span><div><div style="font-size:13px;font-weight:500;color:#f7f4ee">' + t.qual + '</div><div style="font-size:11px;color:#9090a8">Qualification</div></div></div>';
+  if (t.edu)   infoRows += '<div style="display:flex;gap:10px;margin-bottom:10px"><span style="font-size:16px;width:22px">&#127979;</span><div><div style="font-size:13px;font-weight:500;color:#f7f4ee">' + t.edu + '</div><div style="font-size:11px;color:#9090a8">College / University</div></div></div>';
+  if (t.exp)   infoRows += '<div style="display:flex;gap:10px;margin-bottom:10px"><span style="font-size:16px;width:22px">&#9203;</span><div><div style="font-size:13px;font-weight:500;color:#f7f4ee">' + t.exp + '</div><div style="font-size:11px;color:#9090a8">Experience</div></div></div>';
 
-  // Avatar gradient class
-  const avGrad = {av1:'linear-gradient(135deg,#f5a623,#e05c2a)',av2:'linear-gradient(135deg,#00c9a7,#0095ff)',av3:'linear-gradient(135deg,#a855f7,#ec4899)',av4:'linear-gradient(135deg,#10b981,#3b82f6)',av5:'linear-gradient(135deg,#f59e0b,#ef4444)',av6:'linear-gradient(135deg,#6366f1,#8b5cf6)',av7:'linear-gradient(135deg,#06b6d4,#6366f1)',av8:'linear-gradient(135deg,#84cc16,#14b8a6)'}[t.avClass] || 'linear-gradient(135deg,#f5a623,#e05c2a)';
+  var subjHtml = (t.subjects||[]).map(function(s){ return '<span style="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.25);border-radius:8px;padding:5px 11px;font-size:12px;color:#f5a623;margin:3px">' + s + '</span>'; }).join('');
+  var classHtml = (t.classes||[]).map(function(c){ return '<span style="background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.2);border-radius:8px;padding:5px 11px;font-size:12px;color:#00c9a7;margin:3px">' + c + '</span>'; }).join('');
 
-  // Build info rows
-  const infoRows = [
-    { icon:'📍', label:'Location', val: t.area ? t.area + ', Trivandrum' : null },
-    { icon:'🏠', label:'Mode', val: 'Home visits · Online available' },
-    { icon:'👤', label:'Age', val: t.age ? t.age + ' years' : null },
-    { icon:'🎓', label:'Qualification', val: t.qual || null },
-    { icon:'🏫', label:'College / University', val: t.edu || null },
-    { icon:'⏳', label:'Experience', val: t.exp || null },
-  ].filter(r => r.val);
+  var waIcon16 = '<svg style="width:18px;height:18px;fill:#fff;flex-shrink:0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.549 4.122 1.512 5.862L.057 23.428a.5.5 0 0 0 .614.614l5.566-1.455A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.946a9.94 9.94 0 0 1-5.073-1.39l-.364-.215-3.773.988.988-3.774-.215-.364A9.94 9.94 0 0 1 2.054 12C2.054 6.497 6.497 2.054 12 2.054S21.946 6.497 21.946 12 17.503 21.946 12 21.946z"/></svg>';
 
-  // Subjects
-  const subjHtml = (t.subjects||[]).map(s =>
-    `<span style="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.25);border-radius:8px;padding:5px 11px;font-size:12px;color:#f5a623">${s}</span>`
-  ).join('');
+  var html =
+    '<div style="position:sticky;top:0;z-index:10;background:#12121f;border-bottom:1px solid rgba(255,255,255,0.07);border-radius:20px 20px 0 0;padding:14px 18px;display:flex;align-items:center;justify-content:space-between">' +
+      '<span style="font-size:15px;font-weight:600;color:#f7f4ee">' + t.name + '</span>' +
+      '<button onclick="closeProfileBtn()" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;cursor:pointer;color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;line-height:1">&#215;</button>' +
+    '</div>' +
+    '<div style="padding:18px 18px 0;display:flex;gap:14px;align-items:center;margin-bottom:16px">' +
+      '<div style="width:68px;height:68px;border-radius:16px;flex-shrink:0;' + avStyle + ';display:flex;align-items:center;justify-content:center;overflow:hidden">' + photoHtml + '</div>' +
+      '<div>' +
+        '<div style="font-size:13px;color:#9090a8;margin-bottom:6px">' + (t.subjects||[]).slice(0,2).join(' &middot; ') + '</div>' +
+        (t.verified ? '<span style="background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.2);border-radius:100px;padding:3px 9px;font-size:11px;color:#00c9a7;margin-right:5px">&#10003; Verified</span>' : '') +
+        (t.active   ? '<span style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:100px;padding:3px 9px;font-size:11px;color:#818cf8">&#9679; Active</span>' : '') +
+      '</div>' +
+    '</div>' +
+    (infoRows ? '<div style="padding:0 18px 16px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:16px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:12px">PROFILE DETAILS</div>' + infoRows + '</div>' : '') +
+    (subjHtml  ? '<div style="padding:0 18px 14px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:10px">SUBJECTS</div><div style="display:flex;flex-wrap:wrap;gap:5px">' + subjHtml  + '</div></div>' : '') +
+    (classHtml ? '<div style="padding:0 18px 14px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:10px">CLASSES</div><div style="display:flex;flex-wrap:wrap;gap:5px">' + classHtml + '</div></div>' : '') +
+    (t.bio ? '<div style="padding:0 18px 14px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:10px">ABOUT</div><p style="font-size:13px;color:#9090a8;line-height:1.7;margin:0">' + t.bio + '</p></div>' : '') +
+    '<div style="padding:0 18px 18px">' +
+      '<button onclick="openWhatsApp(' + t.id + ')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;border:none;border-radius:12px;padding:14px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;width:100%;box-sizing:border-box">' +
+        waIcon16 + ' Connect on WhatsApp' +
+      '</button>' +
+    '</div>' +
+    '<div style="padding:0 18px 24px" id="reviews-section">' +
+      '<div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:12px">REVIEWS</div>' +
+      '<div id="reviews-loading" style="font-size:13px;color:#9090a8">Loading reviews...</div>' +
+    '</div>';
 
-  // Classes
-  const classHtml = (t.classes||[]).map(c =>
-    `<span style="background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.2);border-radius:8px;padding:5px 11px;font-size:12px;color:#00c9a7">${c}</span>`
-  ).join('');
+  var sheet = document.getElementById('profile-sheet');
+  sheet.innerHTML = html;
 
-  // Reviews HTML
-  const reviewsHtml = mappedReviews.length
-    ? mappedReviews.map(r => `
-      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-          <span style="font-size:13px;font-weight:600;color:#f7f4ee">${r.name}</span>
-          <span style="color:#f5a623;font-size:12px">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
-        </div>
-        <div style="font-size:13px;color:#9090a8;line-height:1.6">${r.text}</div>
-        <div style="font-size:11px;color:#9090a8;margin-top:5px">${new Date(r.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
-      </div>`).join('')
-    : `<div style="font-size:13px;color:#9090a8;padding:8px 0">No reviews yet. Be the first!</div>`;
-
-  // Full modal HTML
-  const html = `
-    <style>
-      .mstar span{cursor:pointer;font-size:24px;color:rgba(255,255,255,0.15);transition:color 0.1s}
-      .mstar span.on{color:#f5a623}
-      .mrinput{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:11px 13px;color:#f7f4ee;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:10px;display:block;resize:vertical;box-sizing:border-box}
-      .mrinput::placeholder{color:#9090a8}
-      .mrinput:focus{border-color:rgba(245,166,35,0.45)}
-      .msec-title{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:10px}
-    </style>
-
-    <!-- Top bar -->
-    <div style="position:sticky;top:0;z-index:10;background:#12121f;border-bottom:1px solid rgba(255,255,255,0.07);border-radius:20px 20px 0 0;padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
-      <span style="font-size:15px;font-weight:600;color:#f7f4ee;font-family:'DM Sans',sans-serif">${t.name}</span>
-      <button onclick="closeProfileBtn()" style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.09);border:none;cursor:pointer;color:#f7f4ee;font-size:18px;display:flex;align-items:center;justify-content:center;line-height:1;font-family:sans-serif">×</button>
-    </div>
-
-    <!-- Header -->
-    <div style="padding:18px 18px 0;display:flex;gap:14px;align-items:center">
-      <div style="width:68px;height:68px;border-radius:16px;flex-shrink:0;background:${avGrad};display:flex;align-items:center;justify-content:center;overflow:hidden">${photoHtml}</div>
-      <div>
-        <div style="font-size:14px;color:#9090a8;margin-bottom:8px">${(t.subjects||[]).slice(0,2).join(' · ') || 'Tutor'}</div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap">
-          ${t.verified ? `<span style="background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.2);border-radius:100px;padding:3px 9px;font-size:11px;font-weight:500;color:#00c9a7">✓ Verified</span>` : ''}
-          ${t.active ? `<span style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:100px;padding:3px 9px;font-size:11px;font-weight:500;color:#818cf8">● Active</span>` : ''}
-        </div>
-      </div>
-    </div>
-
-    <!-- Info rows -->
-    <div style="padding:16px 18px 0">
-      <div class="msec-title">Profile Details</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        ${infoRows.map(r => `
-          <div style="display:flex;align-items:flex-start;gap:10px">
-            <span style="font-size:16px;width:22px;text-align:center;flex-shrink:0;margin-top:1px">${r.icon}</span>
-            <div>
-              <div style="font-size:13px;font-weight:500;color:#f7f4ee">${r.val}</div>
-              <div style="font-size:11px;color:#9090a8;margin-top:1px">${r.label}</div>
-            </div>
-          </div>`).join('')}
-      </div>
-    </div>
-
-    <!-- Subjects -->
-    ${subjHtml ? `
-    <div style="padding:16px 18px 0">
-      <div class="msec-title">Subjects</div>
-      <div style="display:flex;flex-wrap:wrap;gap:7px">${subjHtml}</div>
-    </div>` : ''}
-
-    <!-- Classes -->
-    ${classHtml ? `
-    <div style="padding:14px 18px 0">
-      <div class="msec-title">Classes</div>
-      <div style="display:flex;flex-wrap:wrap;gap:7px">${classHtml}</div>
-    </div>` : ''}
-
-    <!-- About -->
-    ${t.bio ? `
-    <div style="padding:14px 18px 0">
-      <div class="msec-title">About</div>
-      <p style="font-size:13px;color:#9090a8;line-height:1.7;margin:0">${t.bio}</p>
-    </div>` : ''}
-
-    <!-- WhatsApp CTA -->
-    <div style="padding:18px 18px 0">
-      <button onclick="openWhatsApp('${t.phone}', '${t.name.replace(/'/g,"\\'")}', ${t.id})"
-        style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;border:none;border-radius:12px;padding:14px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;box-sizing:border-box">
-        ${WA_SVG} Connect on WhatsApp
-      </button>
-    </div>
-
-    <!-- Reviews -->
-    <div style="padding:16px 18px 24px">
-      <div class="msec-title">Reviews</div>
-      ${reviewsHtml}
-
-      <!-- Leave review form -->
-      <div id="m-review-form" style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.07)">
-        <div style="font-size:13px;font-weight:500;color:#f7f4ee;margin-bottom:10px">Leave a Review</div>
-        <div class="mstar" id="m-stars" style="display:flex;gap:4px;margin-bottom:12px">
-          <span onclick="mSetRating(1)">★</span><span onclick="mSetRating(2)">★</span>
-          <span onclick="mSetRating(3)">★</span><span onclick="mSetRating(4)">★</span>
-          <span onclick="mSetRating(5)">★</span>
-        </div>
-        <input id="m-rname" class="mrinput" placeholder="Your name (e.g. Parent of Class 10 student)">
-        <textarea id="m-rtext" class="mrinput" rows="3" placeholder="Share your experience..."></textarea>
-        <button onclick="mSubmitReview(${t.id})"
-          style="background:#f5a623;color:#000;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">
-          Submit Review
-        </button>
-      </div>
-      <div id="m-review-done" style="display:none;background:rgba(0,201,167,0.08);border:1px solid rgba(0,201,167,0.2);border-radius:10px;padding:12px 14px;font-size:13px;color:#00c9a7;margin-top:10px">
-        🕐 Submitted! Pending admin approval.
-      </div>
-    </div>`;
-
-  document.getElementById('profile-sheet').innerHTML = html;
-  const overlay = document.getElementById('profile-overlay');
+  var overlay = document.getElementById('profile-overlay');
   overlay.style.display = 'flex';
   document.body.style.overflow = 'hidden';
+
+  // Load reviews asynchronously AFTER modal is visible
+  loadReviewsForModal(t.id);
+}
+
+async function loadReviewsForModal(tutorId) {
+  var section = document.getElementById('reviews-loading');
+  if (!section) return;
+  var reviews = await sbGet('reviews?tutor_id=eq.' + tutorId + '&status=eq.approved&order=created_at.desc');
+  var html = '';
+  if (!reviews || !reviews.length) {
+    html = '<div style="font-size:13px;color:#9090a8">No reviews yet. Be the first!</div>';
+  } else {
+    reviews.forEach(function(r) {
+      var stars = '';
+      for (var i=0;i<(r.rating||0);i++) stars += '&#9733;';
+      for (var j=r.rating||0;j<5;j++) stars += '&#9734;';
+      html += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px 14px;margin-bottom:8px">' +
+        '<div style="display:flex;justify-content:space-between;margin-bottom:5px">' +
+          '<span style="font-size:13px;font-weight:600;color:#f7f4ee">' + r.reviewer_name + '</span>' +
+          '<span style="color:#f5a623;font-size:12px">' + stars + '</span>' +
+        '</div>' +
+        '<div style="font-size:13px;color:#9090a8;line-height:1.6">' + r.review_text + '</div>' +
+        '</div>';
+    });
+  }
+  // Add review form
+  html += '<div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.07)">' +
+    '<div style="font-size:13px;font-weight:500;color:#f7f4ee;margin-bottom:10px">Leave a Review</div>' +
+    '<div id="star-row" style="display:flex;gap:4px;margin-bottom:12px;font-size:26px;color:rgba(255,255,255,0.15);cursor:pointer">' +
+      '<span onclick="mStar(1,'+tutorId+')">&#9733;</span><span onclick="mStar(2,'+tutorId+')">&#9733;</span><span onclick="mStar(3,'+tutorId+')">&#9733;</span><span onclick="mStar(4,'+tutorId+')">&#9733;</span><span onclick="mStar(5,'+tutorId+')">&#9733;</span>' +
+    '</div>' +
+    '<input id="m-rname" placeholder="Your name" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:11px 13px;color:#f7f4ee;font-family:\'DM Sans\',sans-serif;font-size:14px;outline:none;margin-bottom:10px;display:block;box-sizing:border-box">' +
+    '<textarea id="m-rtext" rows="3" placeholder="Share your experience..." style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:11px 13px;color:#f7f4ee;font-family:\'DM Sans\',sans-serif;font-size:14px;outline:none;margin-bottom:10px;display:block;box-sizing:border-box;resize:vertical"></textarea>' +
+    '<button onclick="mSubmitReview('+tutorId+')" style="background:#f5a623;color:#000;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif">Submit Review</button>' +
+    '</div>';
+
+  var el = document.getElementById('reviews-loading');
+  if (el) el.outerHTML = html;
+}
+
+var _mStarRating = 0;
+function mStar(n, tutorId) {
+  _mStarRating = n;
+  var spans = document.getElementById('star-row').querySelectorAll('span');
+  spans.forEach(function(s,i){ s.style.color = i < n ? '#f5a623' : 'rgba(255,255,255,0.15)'; });
+}
+
+async function mSubmitReview(tutorId) {
+  var name = (document.getElementById('m-rname').value || '').trim();
+  var text = (document.getElementById('m-rtext').value || '').trim();
+  if (!_mStarRating) { alert('Please select a star rating.'); return; }
+  if (!name) { alert('Please enter your name.'); return; }
+  if (!text) { alert('Please write your review.'); return; }
+  await sbPost('reviews', { tutor_id: tutorId, reviewer_name: name, review_text: text, rating: _mStarRating });
+  alert('Review submitted! It will appear after admin approval. Thank you!');
 }
 
 function closeProfileBtn() {
@@ -952,30 +900,23 @@ function closeProfileBtn() {
   document.body.style.overflow = '';
 }
 
-// In-modal review functions
-let mRating = 0;
-function mSetRating(n) {
-  mRating = n;
-  document.querySelectorAll('#m-stars span').forEach((s,i) => s.classList.toggle('on', i < n));
-}
+// ============================================================
+// SCROLL REVEAL
+// ============================================================
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) {
+    if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+  });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade-up').forEach(function(el){ observer.observe(el); });
 
-async function mSubmitReview(tutorId) {
-  const name = (document.getElementById('m-rname').value || '').trim();
-  const text = (document.getElementById('m-rtext').value || '').trim();
-  if (!mRating) { alert('Please select a star rating.'); return; }
-  if (!name)    { alert('Please enter your name.'); return; }
-  if (!text)    { alert('Please write your review.'); return; }
-  await sbPost('reviews', { tutor_id: tutorId, reviewer_name: name, review_text: text, rating: mRating });
-  document.getElementById('m-review-form').style.display = 'none';
-  document.getElementById('m-review-done').style.display = 'block';
-}
-
-// Init
+// ============================================================
+// INIT
+// ============================================================
 logVisit();
-(async () => {
-  const tutors = await loadTutors();
+loadTutors().then(function(tutors) {
   renderTutors(tutors);
-})();
+});
 </script>
 </body>
 </html>
