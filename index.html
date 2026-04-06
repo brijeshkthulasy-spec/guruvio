@@ -570,6 +570,7 @@ function renderCard(t) {
 
   var areaHtml    = areas.slice(0,3).map(function(a){ return '<span style="background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.3);border-radius:6px;padding:3px 9px;font-size:11px;color:#f5a623">&#128205; ' + a + '</span>'; }).join('') + (areas.length > 3 ? '<span style="font-size:11px;color:var(--muted)"> +' + (areas.length-3) + ' more</span>' : '');
   var subjectHtml = (t.subjects||[]).map(function(s){ return '<span class="stag">' + s + '</span>'; }).join('');
+  var classHtml   = (t.classes||[]).map(function(c){ return '<span style="background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.2);border-radius:6px;padding:3px 9px;font-size:11px;color:#00c9a7">' + c + '</span>'; }).join('');
   var syllabusHtml= (t.syllabus||[]).map(function(sy){ return '<span style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:6px;padding:3px 9px;font-size:11px;color:#818cf8">' + sy + '</span>'; }).join('');
 
   return '<div class="tutor-card visible" data-id="' + t.id + '">' +
@@ -578,6 +579,7 @@ function renderCard(t) {
     '</div>' +
     '<div class="card-tags">' + areaHtml + '</div>' +
     '<div class="card-tags">' + subjectHtml + '</div>' +
+    '<div class="card-tags">' + classHtml + '</div>' +
     '<div class="card-tags">' + syllabusHtml + '</div>' +
     '<div class="card-spacer"></div>' +
     '<div class="card-footer"><div class="tutor-meta">&#127968; Home &amp; Online</div></div>' +
