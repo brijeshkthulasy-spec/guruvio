@@ -188,10 +188,10 @@
       <div class="field" style="margin-top:18px">
         <label>Syllabus You Teach *</label>
         <div class="checkboxes">
-          <div class="cb-item"><input type="checkbox" id="sy1" value="CBSE"><label for="sy1">CBSE</label></div>
-          <div class="cb-item"><input type="checkbox" id="sy2" value="ICSE"><label for="sy2">ICSE</label></div>
-          <div class="cb-item"><input type="checkbox" id="sy3" value="IGCSE"><label for="sy3">IGCSE</label></div>
-          <div class="cb-item"><input type="checkbox" id="sy4" value="State Syllabus"><label for="sy4">State Syllabus</label></div>
+          <div class="cb-item"><input type="checkbox" id="sl1" value="CBSE"><label for="sl1">CBSE</label></div>
+          <div class="cb-item"><input type="checkbox" id="sl2" value="ICSE"><label for="sl2">ICSE</label></div>
+          <div class="cb-item"><input type="checkbox" id="sl3" value="IGCSE"><label for="sl3">IGCSE</label></div>
+          <div class="cb-item"><input type="checkbox" id="sl4" value="State Syllabus"><label for="sl4">State Syllabus</label></div>
         </div>
       </div>
     </div>
@@ -254,11 +254,15 @@ let uploadedPhotoUrl = null;
 function handlePhotoUpload(input) {
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];
-  if (file.size > 2 * 1024 * 1024) { alert('Photo must be under 2MB.'); return; }
+  if (file.size > 500 * 1024) {
+    alert('Photo must be under 500KB. Please compress it first at tinypng.com');
+    input.value = '';
+    return;
+  }
   const reader = new FileReader();
   reader.onload = e => {
     uploadedPhotoUrl = e.target.result;
-    document.getElementById('photo-preview').innerHTML = `<img src="${uploadedPhotoUrl}" alt="Photo">`;
+    document.getElementById('photo-preview').innerHTML = '<img src="' + uploadedPhotoUrl + '" alt="Photo">';
   };
   reader.readAsDataURL(file);
 }
@@ -266,7 +270,6 @@ function handlePhotoUpload(input) {
 async function submitRegistration() {
   const name  = document.getElementById('r-name').value.trim();
   const phone = document.getElementById('r-phone').value.trim();
-  const area  = document.getElementById('r-area').value;
   const exp   = document.getElementById('r-exp').value;
   const qual  = document.getElementById('r-qual').value;
   const age   = document.getElementById('r-age').value;
@@ -275,7 +278,7 @@ async function submitRegistration() {
   const areas    = [...document.querySelectorAll('[id^=a]:checked')].map(c=>c.value);
   const subjects = [...document.querySelectorAll('[id^=s]:checked')].map(c=>c.value);
   const classes  = [...document.querySelectorAll('[id^=c]:checked')].map(c=>c.value);
-  const syllabus = [...document.querySelectorAll('[id^=sy]:checked')].map(c=>c.value);
+  const syllabus = [...document.querySelectorAll('[id^=sl]:checked')].map(c=>c.value);
 
   if (!name||!phone||!areas.length||!exp||!qual||!subjects.length||!classes.length||!syllabus.length) {
     alert('Please fill all required fields and select at least one area, subject, class and syllabus.'); return;
@@ -298,7 +301,7 @@ async function submitRegistration() {
     edu: document.getElementById('r-edu').value || null,
     bio: document.getElementById('r-bio').value || null,
     photo_url: uploadedPhotoUrl || null,
-    subjects, classes,
+    subjects, classes, syllabus,
     av_class: ['av1','av2','av3','av4','av5','av6','av7','av8'][Math.floor(Math.random()*8)],
     status: 'pending'
   };
