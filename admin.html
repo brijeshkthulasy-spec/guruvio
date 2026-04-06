@@ -490,17 +490,29 @@
     <div class="mfield-row">
       <div class="mfield"><label>Rating (0–5)</label><input type="number" id="m-rating" min="0" max="5" step="0.1" placeholder="4.8"></div>
       <div class="mfield">
-        <label>Area *</label>
-        <select id="m-area">
-          <option value="">Select area</option>
-          <option>Pattom</option><option>Kowdiar</option><option>Kazhakuttam</option>
-          <option>Vanchiyoor</option><option>Nemom</option><option>Kesavadasapuram</option>
-          <option>Sasthamangalam</option><option>Manacaud</option><option>Thampanoor</option>
-          <option>Nalanchira</option><option>Nanthancode</option><option>Peroorkada</option>
-          <option>Thirumala</option><option>Ulloor</option><option>Vattiyoorkavu</option>
-          <option>Pappanamcode</option><option>Palayam</option><option>Sreekaryam</option>
-          <option>PMG</option><option>Technopark</option>
-        </select>
+        <label>Areas Covered *</label>
+        <div class="mcheckboxes">
+          <div class="cb-item"><input type="checkbox" id="ma1" value="Pattom"><label for="ma1">Pattom</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma2" value="Kowdiar"><label for="ma2">Kowdiar</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma3" value="Kazhakuttam"><label for="ma3">Kazhakuttam</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma4" value="Vanchiyoor"><label for="ma4">Vanchiyoor</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma5" value="Nemom"><label for="ma5">Nemom</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma6" value="Kesavadasapuram"><label for="ma6">Kesavadasapuram</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma7" value="Sasthamangalam"><label for="ma7">Sasthamangalam</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma8" value="Manacaud"><label for="ma8">Manacaud</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma9" value="Thampanoor"><label for="ma9">Thampanoor</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma10" value="Nalanchira"><label for="ma10">Nalanchira</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma11" value="Nanthancode"><label for="ma11">Nanthancode</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma12" value="Peroorkada"><label for="ma12">Peroorkada</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma13" value="Thirumala"><label for="ma13">Thirumala</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma14" value="Ulloor"><label for="ma14">Ulloor</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma15" value="Vattiyoorkavu"><label for="ma15">Vattiyoorkavu</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma16" value="Pappanamcode"><label for="ma16">Pappanamcode</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma17" value="Palayam"><label for="ma17">Palayam</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma18" value="Sreekaryam"><label for="ma18">Sreekaryam</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma19" value="PMG"><label for="ma19">PMG</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma20" value="Technopark"><label for="ma20">Technopark</label></div>
+        </div>
       </div>
     </div>
     <div class="mfield-row">
@@ -535,6 +547,15 @@
         <div class="cb-item"><input type="checkbox" id="mc4" value="Plus One"><label for="mc4">Plus One</label></div>
         <div class="cb-item"><input type="checkbox" id="mc5" value="Plus Two"><label for="mc5">Plus Two</label></div>
         <div class="cb-item"><input type="checkbox" id="mc6" value="Degree"><label for="mc6">Degree</label></div>
+      </div>
+    </div>
+    <div class="mfield">
+      <label>Syllabus</label>
+      <div class="mcheckboxes">
+        <div class="cb-item"><input type="checkbox" id="msy1" value="CBSE"><label for="msy1">CBSE</label></div>
+        <div class="cb-item"><input type="checkbox" id="msy2" value="ICSE"><label for="msy2">ICSE</label></div>
+        <div class="cb-item"><input type="checkbox" id="msy3" value="IGCSE"><label for="msy3">IGCSE</label></div>
+        <div class="cb-item"><input type="checkbox" id="msy4" value="State Syllabus"><label for="msy4">State Syllabus</label></div>
       </div>
     </div>
     <div class="mfield-row">
@@ -979,8 +1000,10 @@ function resetAdminModal() {
   document.getElementById('m-verified').value = 'true';
   document.getElementById('m-toprated').value = 'false';
   document.getElementById('m-active').value = 'true';
+  document.querySelectorAll('[id^=ma]').forEach(c=>c.checked=false);
   document.querySelectorAll('[id^=ms]').forEach(c=>c.checked=false);
   document.querySelectorAll('[id^=mc]').forEach(c=>c.checked=false);
+  document.querySelectorAll('[id^=msy]').forEach(c=>c.checked=false);
 }
 
 function openAddTutor() {

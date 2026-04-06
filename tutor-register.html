@@ -126,24 +126,34 @@
           <input type="email" id="r-email" placeholder="your@email.com">
         </div>
       </div>
-      <div class="field-row">
-        <div class="field">
-          <label>Area in Trivandrum *</label>
-          <select id="r-area">
-            <option value="">Select area</option>
-            <option>Pattom</option><option>Kowdiar</option><option>Kazhakuttam</option>
-            <option>Vanchiyoor</option><option>Nemom</option><option>Kesavadasapuram</option>
-            <option>Sasthamangalam</option><option>Manacaud</option><option>Thampanoor</option>
-            <option>Nalanchira</option><option>Nanthancode</option><option>Peroorkada</option>
-            <option>Thirumala</option><option>Ulloor</option><option>Vattiyoorkavu</option>
-            <option>Pappanamcode</option><option>Palayam</option><option>Sreekaryam</option>
-            <option>PMG</option><option>Technopark</option>
-          </select>
+      <div class="field">
+        <label>Areas You Cover in Trivandrum * <span style="font-size:11px;color:var(--muted)">(select all that apply)</span></label>
+        <div class="checkboxes">
+          <div class="cb-item"><input type="checkbox" id="a1" value="Pattom"><label for="a1">Pattom</label></div>
+          <div class="cb-item"><input type="checkbox" id="a2" value="Kowdiar"><label for="a2">Kowdiar</label></div>
+          <div class="cb-item"><input type="checkbox" id="a3" value="Kazhakuttam"><label for="a3">Kazhakuttam</label></div>
+          <div class="cb-item"><input type="checkbox" id="a4" value="Vanchiyoor"><label for="a4">Vanchiyoor</label></div>
+          <div class="cb-item"><input type="checkbox" id="a5" value="Nemom"><label for="a5">Nemom</label></div>
+          <div class="cb-item"><input type="checkbox" id="a6" value="Kesavadasapuram"><label for="a6">Kesavadasapuram</label></div>
+          <div class="cb-item"><input type="checkbox" id="a7" value="Sasthamangalam"><label for="a7">Sasthamangalam</label></div>
+          <div class="cb-item"><input type="checkbox" id="a8" value="Manacaud"><label for="a8">Manacaud</label></div>
+          <div class="cb-item"><input type="checkbox" id="a9" value="Thampanoor"><label for="a9">Thampanoor</label></div>
+          <div class="cb-item"><input type="checkbox" id="a10" value="Nalanchira"><label for="a10">Nalanchira</label></div>
+          <div class="cb-item"><input type="checkbox" id="a11" value="Nanthancode"><label for="a11">Nanthancode</label></div>
+          <div class="cb-item"><input type="checkbox" id="a12" value="Peroorkada"><label for="a12">Peroorkada</label></div>
+          <div class="cb-item"><input type="checkbox" id="a13" value="Thirumala"><label for="a13">Thirumala</label></div>
+          <div class="cb-item"><input type="checkbox" id="a14" value="Ulloor"><label for="a14">Ulloor</label></div>
+          <div class="cb-item"><input type="checkbox" id="a15" value="Vattiyoorkavu"><label for="a15">Vattiyoorkavu</label></div>
+          <div class="cb-item"><input type="checkbox" id="a16" value="Pappanamcode"><label for="a16">Pappanamcode</label></div>
+          <div class="cb-item"><input type="checkbox" id="a17" value="Palayam"><label for="a17">Palayam</label></div>
+          <div class="cb-item"><input type="checkbox" id="a18" value="Sreekaryam"><label for="a18">Sreekaryam</label></div>
+          <div class="cb-item"><input type="checkbox" id="a19" value="PMG"><label for="a19">PMG</label></div>
+          <div class="cb-item"><input type="checkbox" id="a20" value="Technopark"><label for="a20">Technopark</label></div>
         </div>
-        <div class="field">
-          <label>Years of Experience *</label>
-          <input type="number" id="r-exp" placeholder="e.g. 5" min="0" max="50">
-        </div>
+      </div>
+      <div class="field">
+        <label>Years of Experience *</label>
+        <input type="number" id="r-exp" placeholder="e.g. 5" min="0" max="50" style="max-width:200px">
       </div>
     </div>
 
@@ -173,6 +183,15 @@
           <div class="cb-item"><input type="checkbox" id="c4" value="Plus One"><label for="c4">Plus One</label></div>
           <div class="cb-item"><input type="checkbox" id="c5" value="Plus Two"><label for="c5">Plus Two</label></div>
           <div class="cb-item"><input type="checkbox" id="c6" value="Degree"><label for="c6">Degree</label></div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:18px">
+        <label>Syllabus You Teach *</label>
+        <div class="checkboxes">
+          <div class="cb-item"><input type="checkbox" id="sy1" value="CBSE"><label for="sy1">CBSE</label></div>
+          <div class="cb-item"><input type="checkbox" id="sy2" value="ICSE"><label for="sy2">ICSE</label></div>
+          <div class="cb-item"><input type="checkbox" id="sy3" value="IGCSE"><label for="sy3">IGCSE</label></div>
+          <div class="cb-item"><input type="checkbox" id="sy4" value="State Syllabus"><label for="sy4">State Syllabus</label></div>
         </div>
       </div>
     </div>
@@ -253,11 +272,13 @@ async function submitRegistration() {
   const age   = document.getElementById('r-age').value;
   const password = document.getElementById('r-password').value;
   const confirmPw = document.getElementById('r-confirm-password').value;
+  const areas    = [...document.querySelectorAll('[id^=a]:checked')].map(c=>c.value);
   const subjects = [...document.querySelectorAll('[id^=s]:checked')].map(c=>c.value);
   const classes  = [...document.querySelectorAll('[id^=c]:checked')].map(c=>c.value);
+  const syllabus = [...document.querySelectorAll('[id^=sy]:checked')].map(c=>c.value);
 
-  if (!name||!phone||!area||!exp||!qual||!subjects.length||!classes.length) {
-    alert('Please fill all required fields and select at least one subject and class.'); return;
+  if (!name||!phone||!areas.length||!exp||!qual||!subjects.length||!classes.length||!syllabus.length) {
+    alert('Please fill all required fields and select at least one area, subject, class and syllabus.'); return;
   }
   if (password && password.length < 6) {
     alert('Password must be at least 6 characters.'); return;
@@ -272,7 +293,7 @@ async function submitRegistration() {
 
   const row = {
     name, phone, email: document.getElementById('r-email').value || null,
-    area, exp: exp+' years', qual,
+    areas: areas, area: areas[0] || '', exp: exp+' years', qual,
     age: age ? parseInt(age) : null,
     edu: document.getElementById('r-edu').value || null,
     bio: document.getElementById('r-bio').value || null,
