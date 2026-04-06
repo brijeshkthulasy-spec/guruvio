@@ -359,19 +359,20 @@
     <div class="page" id="page-tutors">
       <div class="page-header">
         <h1>Manage Tutors</h1>
-        <p>Add, edit or remove tutor profiles</p>
+        <p>Drag rows to reorder — order here = order on the main site</p>
       </div>
       <div class="table-wrap">
         <div class="table-header">
           <h3>All Tutors</h3>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <input type="text" class="search-input" placeholder="Search tutors..." oninput="filterTutorTable(this.value)">
-            <button class="action-btn" onclick="renderTutorTable()" style="border-color:var(--muted);color:var(--muted)">↻ Refresh</button>
+            <button class="action-btn" onclick="loadTutorsPage()" style="border-color:var(--muted);color:var(--muted)">↻ Refresh</button>
+            <button class="action-btn" id="save-order-btn" onclick="saveOrder()" style="border-color:#00c9a7;color:#00c9a7;display:none">💾 Save Order</button>
             <button class="action-btn" style="border-color:var(--accent);color:var(--accent)" onclick="openAddTutor()">+ Add Tutor</button>
           </div>
         </div>
         <table>
-          <thead><tr><th>Name</th><th>Area</th><th>Subjects</th><th>Rating</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th style="width:36px"></th><th>Name</th><th>Area</th><th>Subjects</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="tutor-tbody"></tbody>
         </table>
       </div>
@@ -790,16 +791,102 @@ function renderAreaChart(tutors) {
 // MANAGE TUTORS
 // ============================================
 let _tutors = [];
+let _dragSrc = null;
 
 async function loadTutorsPage() {
   const tbody = document.getElementById('tutor-tbody');
   tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:20px">Loading tutors...</td></tr>';
-  _tutors = await sbGet('tutors', 'order=id.asc');
+  // Load sorted by sort_order, then id
+  _tutors = await sbGet('tutors', 'order=sort_order.asc.nullslast,id.asc');
   renderTutorTable();
+  const btn = document.getElementById('save-order-btn');
+  if (btn) btn.style.display = 'none';
 }
 
 function getTutors() { return _tutors; }
 function saveTutors(t) { _tutors = t; }
+
+function renderTutorTable(filter) {
+  let tutors = _tutors;
+  if (filter) tutors = tutors.filter(t =>
+    (t.name||'').toLowerCase().includes(filter) ||
+    (t.area||'').toLowerCase().includes(filter) ||
+    (t.subjects||[]).join(' ').toLowerCase().includes(filter)
+  );
+  const tbody = document.getElementById('tutor-tbody');
+  if (!tutors.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No tutors found</td></tr>'; return; }
+  tbody.innerHTML = tutors.map(t => {
+    const av = t.photo_url
+      ? '<img src="' + t.photo_url + '" style="width:32px;height:32px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:8px">'
+      : '<span style="display:inline-flex;width:32px;height:32px;border-radius:8px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:13px;vertical-align:middle;margin-right:8px">' + (t.name||'?')[0] + '</span>';
+    return '<tr draggable="true" data-id="' + t.id + '" style="cursor:grab" ' +
+      'ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dragDrop(event)" ondragend="dragEnd(event)">' +
+      '<td style="text-align:center;color:var(--muted);font-size:18px;cursor:grab;user-select:none">⠿</td>' +
+      '<td>' + av + '<strong>' + t.name + '</strong>' + (t.age ? '<span style="font-size:11px;color:var(--muted);margin-left:6px">' + t.age + 'y</span>' : '') + '</td>' +
+      '<td>' + (t.area||'—') + '</td>' +
+      '<td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (t.subjects||[]).join(', ') + '</td>' +
+      '<td><span class="pill ' + (t.active?'pill-green':'pill-red') + '">' + (t.active?'Active':'Hidden') + '</span></td>' +
+      '<td><button class="action-btn" onclick="openEditTutor(' + t.id + ')">Edit</button> <button class="action-btn danger" onclick="deleteTutor(' + t.id + ')">Delete</button></td>' +
+      '</tr>';
+  }).join('');
+}
+
+// ---- DRAG AND DROP ----
+function dragStart(e) {
+  _dragSrc = e.currentTarget;
+  e.currentTarget.style.opacity = '0.4';
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const row = e.currentTarget;
+  const tbody = row.parentNode;
+  const rows = [...tbody.querySelectorAll('tr[data-id]')];
+  const srcIdx = rows.indexOf(_dragSrc);
+  const tgtIdx = rows.indexOf(row);
+  if (srcIdx !== tgtIdx && tgtIdx >= 0) {
+    if (srcIdx < tgtIdx) {
+      tbody.insertBefore(_dragSrc, row.nextSibling);
+    } else {
+      tbody.insertBefore(_dragSrc, row);
+    }
+  }
+  return false;
+}
+
+function dragDrop(e) {
+  e.stopPropagation();
+  return false;
+}
+
+function dragEnd(e) {
+  e.currentTarget.style.opacity = '1';
+  // Show save button
+  const btn = document.getElementById('save-order-btn');
+  if (btn) btn.style.display = 'inline-block';
+  // Update _tutors array to match new DOM order
+  const tbody = document.getElementById('tutor-tbody');
+  const rows = [...tbody.querySelectorAll('tr[data-id]')];
+  const newOrder = rows.map(r => parseInt(r.dataset.id));
+  _tutors = newOrder.map(id => _tutors.find(t => t.id === id)).filter(Boolean);
+}
+
+async function saveOrder() {
+  const btn = document.getElementById('save-order-btn');
+  if (btn) { btn.textContent = 'Saving...'; btn.style.opacity = '0.6'; }
+  // Save sort_order for each tutor
+  const promises = _tutors.map((t, i) =>
+    sbPatch('tutors', t.id, { sort_order: i + 1 })
+  );
+  await Promise.all(promises);
+  if (btn) { btn.textContent = '✅ Saved!'; btn.style.opacity = '1'; }
+  setTimeout(() => {
+    if (btn) { btn.textContent = '💾 Save Order'; btn.style.display = 'none'; }
+  }, 2000);
+  toast('Tutor order saved! Main site updated.');
+}
 
 async function saveTutor() {
   const id    = document.getElementById('m-id').value;
@@ -839,30 +926,6 @@ async function saveTutor() {
   closeModal();
   toast('Tutor saved successfully!');
   loadTutorsPage();
-}
-
-function renderTutorTable(filter) {
-  let tutors = _tutors;
-  if (filter) tutors = tutors.filter(t =>
-    (t.name||'').toLowerCase().includes(filter) ||
-    (t.area||'').toLowerCase().includes(filter) ||
-    (t.subjects||[]).join(' ').toLowerCase().includes(filter)
-  );
-  const tbody = document.getElementById('tutor-tbody');
-  if (!tutors.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No tutors found</td></tr>'; return; }
-  tbody.innerHTML = tutors.map(t => {
-    const av = t.photo_url
-      ? '<img src="' + t.photo_url + '" style="width:32px;height:32px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:8px">'
-      : '<span style="display:inline-flex;width:32px;height:32px;border-radius:8px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:13px;vertical-align:middle;margin-right:8px">' + (t.name||'?')[0] + '</span>';
-    return '<tr>' +
-      '<td>' + av + '<strong>' + t.name + '</strong>' + (t.age ? '<span style="font-size:11px;color:var(--muted);margin-left:6px">' + t.age + 'y</span>' : '') + '</td>' +
-      '<td>' + (t.area||'—') + '</td>' +
-      '<td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (t.subjects||[]).join(', ') + '</td>' +
-      '<td>' + (t.rating > 0 ? '★ '+t.rating : '—') + '</td>' +
-      '<td><span class="pill ' + (t.active?'pill-green':'pill-red') + '">' + (t.active?'Active':'Hidden') + '</span></td>' +
-      '<td><button class="action-btn" onclick="openEditTutor(' + t.id + ')">Edit</button> <button class="action-btn danger" onclick="deleteTutor(' + t.id + ')">Delete</button></td>' +
-      '</tr>';
-  }).join('');
 }
 
 function filterTutorTable(v) { renderTutorTable(v.toLowerCase()); }

@@ -175,16 +175,20 @@
   .tutors-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px; }
   .tutor-card {
     background:var(--card); border:1px solid var(--border);
-    border-radius:20px; padding:26px; transition:all 0.3s;
-    position:relative;
-    display:none;
+    border-radius:20px; padding:22px; transition:all 0.3s;
+    position:relative; display:none;
+    flex-direction:column;
   }
-  .tutor-card.visible { display:block; }
+  .tutor-card.visible { display:flex; }
   .tutor-card::before {
     content:''; position:absolute; inset:0; border-radius:20px;
     background:radial-gradient(ellipse at top left,rgba(245,166,35,0.05),transparent 60%);
     opacity:0; transition:opacity 0.3s; pointer-events:none;
   }
+  .tutor-card:hover { border-color:rgba(245,166,35,0.3); transform:translateY(-4px); box-shadow:0 20px 48px rgba(0,0,0,0.4); }
+  .tutor-card:hover::before { opacity:1; }
+  .card-tags { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; min-height:26px; }
+  .card-footer { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; margin-top:auto; }
   }
   .tutor-card:hover { border-color:rgba(245,166,35,0.3); transform:translateY(-4px); box-shadow:0 20px 48px rgba(0,0,0,0.4); }
   .tutor-card:hover::before { opacity:1; }
@@ -503,7 +507,7 @@ var SAMPLE_TUTORS = [
 ];
 
 async function loadTutors() {
-  var data = await sbGet('tutors?active=eq.true&order=id.asc');
+  var data = await sbGet('tutors?active=eq.true&order=sort_order.asc.nullslast,id.asc');
   if (data && data.length > 0) {
     _tutors = data.map(function(t) {
       return {
@@ -552,38 +556,22 @@ function renderCard(t) {
     ? '<div class="avatar ' + t.avClass + '"><img src="' + t.photoUrl + '" alt="' + t.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:14px"></div>'
     : '<div class="avatar ' + t.avClass + '">' + t.avatar + '</div>';
 
-  var badges = (t.active ? '<span class="badge ba">&#9679; Active</span>' : '');
-
   var areas = (t.areas && t.areas.length) ? t.areas : (t.area ? [t.area] : []);
 
   var waIconSvg = '<svg style="width:17px;height:17px;fill:#fff;flex-shrink:0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.549 4.122 1.512 5.862L.057 23.428a.5.5 0 0 0 .614.614l5.566-1.455A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.946a9.94 9.94 0 0 1-5.073-1.39l-.364-.215-3.773.988.988-3.774-.215-.364A9.94 9.94 0 0 1 2.054 12C2.054 6.497 6.497 2.054 12 2.054S21.946 6.497 21.946 12 17.503 21.946 12 21.946z"/></svg>';
 
-  var eyeIcon = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-
-  var p = String(t.phone || '').replace(/\D/g,'');
-  if (p.charAt(0) === '0') p = p.slice(1);
-  if (p.length === 10) p = '91' + p;
-  var waHref = 'https://wa.me/' + p + '?text=' + encodeURIComponent('Hello ' + t.name + ', I found your profile on Guruvio. I need a tutor for my child and your profile looks great. Can we talk about availability and charges?');
+  var areaHtml    = areas.slice(0,3).map(function(a){ return '<span style="background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.3);border-radius:6px;padding:3px 9px;font-size:11px;color:#f5a623">&#128205; ' + a + '</span>'; }).join('') + (areas.length > 3 ? '<span style="font-size:11px;color:var(--muted)"> +' + (areas.length-3) + ' more</span>' : '');
+  var subjectHtml = (t.subjects||[]).map(function(s){ return '<span class="stag">' + s + '</span>'; }).join('');
+  var syllabusHtml= (t.syllabus||[]).map(function(sy){ return '<span style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:6px;padding:3px 9px;font-size:11px;color:#818cf8">' + sy + '</span>'; }).join('');
 
   return '<div class="tutor-card visible" data-id="' + t.id + '">' +
     '<div class="card-top">' + av +
-    '<div><div class="tutor-name">' + t.name + '</div>' +
-    '<div class="tutor-exp">' + t.exp + ' experience</div></div></div>' +
-    '<div class="badges">' + badges + '</div>' +
-    '<div class="card-areas" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">' +
-      areas.slice(0,3).map(function(a){ return '<span style="background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.3);border-radius:6px;padding:3px 9px;font-size:11px;color:#f5a623">&#128205; ' + a + '</span>'; }).join('') +
-      (areas.length > 3 ? '<span style="font-size:11px;color:var(--muted)">+' + (areas.length-3) + ' more</span>' : '') +
+      '<div><div class="tutor-name">' + t.name + '</div><div class="tutor-exp">' + (t.exp||'') + ' · ' + (t.active ? '<span style="color:#818cf8">&#9679; Active</span>' : '') + '</div></div>' +
     '</div>' +
-    '<div class="subjects" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">' +
-      (t.subjects||[]).map(function(s){ return '<span class="stag">' + s + '</span>'; }).join('') +
-    '</div>' +
-    '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">' +
-      (t.syllabus||[]).map(function(sy){ return '<span style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:6px;padding:3px 9px;font-size:11px;color:#818cf8">' + sy + '</span>'; }).join('') +
-    '</div>' +
-    '<div class="card-footer">' +
-      '<div class="tutor-meta">' + t.exp + ' exp</div>' +
-      '<div style="font-size:11px;color:var(--teal)">&#127968; Home &amp; Online</div>' +
-    '</div>' +
+    '<div class="card-tags">' + areaHtml + '</div>' +
+    '<div class="card-tags">' + subjectHtml + '</div>' +
+    '<div class="card-tags">' + syllabusHtml + '</div>' +
+    '<div class="card-footer"><div class="tutor-meta">&#127968; Home &amp; Online</div></div>' +
     '<button type="button" class="wa-btn" onclick="openWhatsApp(' + t.id + ')">' + waIconSvg + ' Connect on WhatsApp</button>' +
     '</div>';
 }
