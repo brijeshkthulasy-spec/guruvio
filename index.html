@@ -712,7 +712,7 @@ function openWhatsApp(tutorId) {
   var p = cleanPhone(t.phone);
   if (!p || p.length < 10) { alert('This tutor has no valid WhatsApp number yet.'); return; }
   logContact(t.id);
-  var msg = encodeURIComponent('Hello ' + t.name + ', I found your profile on Guruvio. I need a tutor for my child and your profile looks great. Can we talk about availability and charges?');
+  var msg = encodeURIComponent('👋 Hello *' + t.name + '*, I found your profile on *Guruvio* 🎓\n\nYour profile looks great and I am interested in your tutoring services! 🌟\n\nCould we talk about availability and charges? 📚');
   // Fix 1: use location.href — never blocked by browser
   window.location.href = 'https://wa.me/' + p + '?text=' + msg;
 }
