@@ -564,122 +564,85 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ---- SUPABASE CONFIG ----
+// ============================================
+// SUPABASE
+// ============================================
 const SUPA_URL = 'https://lmqsoxrnxrktzosmwkwd.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI';
-const H = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Content-Type': 'application/json' };
+const SB_H = {
+  'apikey': SUPA_KEY,
+  'Authorization': 'Bearer ' + SUPA_KEY,
+  'Content-Type': 'application/json'
+};
 
-async function sbFetch(path, opts = {}) {
+async function sbGet(table, query) {
+  const url = SUPA_URL + '/rest/v1/' + table + (query ? '?' + query : '');
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
-      headers: { ...H, 'Prefer': opts.prefer || 'return=representation', ...(opts.headers||{}) },
-      ...opts
-    });
-    const text = await r.text();
-    if (!r.ok) {
-      console.error('Supabase error:', r.status, text);
-      return [];
-    }
-    return text ? JSON.parse(text) : [];
-  } catch(e) {
-    console.error('Supabase fetch failed:', e);
-    return [];
-  }
+    const r = await fetch(url, { headers: SB_H });
+    const txt = await r.text();
+    if (!r.ok) { console.error('sbGet error', r.status, txt); return []; }
+    return txt ? JSON.parse(txt) : [];
+  } catch(e) { console.error('sbGet failed', e); return []; }
 }
-async function sbGet(path) { return sbFetch(path); }
-async function sbPost(table, data) { return sbFetch(table, { method:'POST', body:JSON.stringify(data) }); }
-async function sbPatch(table, query, data) { return sbFetch(`${table}?${query}`, { method:'PATCH', prefer:'return=minimal', body:JSON.stringify(data) }); }
-async function sbDelete(table, query) { return sbFetch(`${table}?${query}`, { method:'DELETE', prefer:'return=minimal' }); }
-async function sbCount(table) {
+
+async function sbPost(table, data) {
+  const url = SUPA_URL + '/rest/v1/' + table;
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/${table}?select=id`, {
-      headers: { ...H, 'Prefer': 'count=exact', 'Range': '0-0' }
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { ...SB_H, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(data)
     });
-    const range = r.headers.get('content-range');
-    return range ? parseInt(range.split('/')[1]) || 0 : 0;
-  } catch { return 0; }
+    if (!r.ok) { const t = await r.text(); console.error('sbPost error', r.status, t); }
+    return r.ok;
+  } catch(e) { console.error('sbPost failed', e); return false; }
 }
 
-function getVisits() { return []; }
-function getContacts() { return []; }
-
-// Load tutors from Supabase into localStorage cache for admin use
-async function syncTutors() {
-  const data = await sbGet('tutors?order=id.asc');
-  const mapped = data.map(t => ({
-    id: t.id, name: t.name, phone: t.phone, area: t.area,
-    subjects: t.subjects || [], classes: t.classes || [],
-    exp: t.exp || '', age: t.age, qual: t.qual || '', edu: t.edu || '',
-    bio: t.bio || '', photoUrl: t.photo_url, avClass: t.av_class || 'av1',
-    verified: t.verified, topRated: t.top_rated, active: t.active,
-    rating: t.rating || 0, avatar: (t.name||'T')[0].toUpperCase()
-  }));
-  localStorage.setItem('guruvio_tutors', JSON.stringify(mapped));
-  return mapped;
+async function sbPatch(table, id, data) {
+  const url = SUPA_URL + '/rest/v1/' + table + '?id=eq.' + id;
+  try {
+    const r = await fetch(url, {
+      method: 'PATCH',
+      headers: { ...SB_H, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) { const t = await r.text(); console.error('sbPatch error', r.status, t); }
+    return r.ok;
+  } catch(e) { console.error('sbPatch failed', e); return false; }
 }
 
-async function syncRegistrations() {
-  const data = await sbGet('registrations?order=submitted_at.desc');
-  const mapped = data.map(r => ({
-    id: r.id, name: r.name, phone: r.phone, area: r.area,
-    subjects: r.subjects || [], classes: r.classes || [],
-    exp: r.exp || '', age: r.age, qual: r.qual || '', edu: r.edu || '',
-    bio: r.bio || '', photoUrl: r.photo_url, avClass: r.av_class || 'av1',
-    status: r.status, submittedAt: r.submitted_at,
-    password: r.password || null
-  }));
-  localStorage.setItem('guruvio_registrations', JSON.stringify(mapped));
-  return mapped;
+async function sbDelete(table, id) {
+  const url = SUPA_URL + '/rest/v1/' + table + '?id=eq.' + id;
+  try {
+    const r = await fetch(url, {
+      method: 'DELETE',
+      headers: { ...SB_H, 'Prefer': 'return=minimal' }
+    });
+    return r.ok;
+  } catch(e) { console.error('sbDelete failed', e); return false; }
 }
 
-async function syncReviews() {
-  const data = await sbGet('reviews?order=created_at.desc');
-  const mapped = data.map(r => ({
-    id: r.id, tutorId: r.tutor_id, name: r.reviewer_name,
-    text: r.review_text, rating: r.rating, status: r.status,
-    date: r.created_at
-  }));
-  localStorage.setItem('guruvio_reviews', JSON.stringify(mapped));
-  return mapped;
+async function sbPatchQuery(table, query, data) {
+  const url = SUPA_URL + '/rest/v1/' + table + '?' + query;
+  try {
+    const r = await fetch(url, {
+      method: 'PATCH',
+      headers: { ...SB_H, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(data)
+    });
+    if (!r.ok) { const t = await r.text(); console.error('sbPatchQuery error', r.status, t); }
+    return r.ok;
+  } catch(e) { console.error('sbPatchQuery failed', e); return false; }
 }
 
-// Supabase-backed CRUD for tutors
-async function sbSaveTutor(obj) {
-  const row = {
-    name: obj.name, phone: obj.phone, area: obj.area,
-    subjects: obj.subjects, classes: obj.classes,
-    exp: obj.exp, age: obj.age || null, qual: obj.qual,
-    edu: obj.edu, bio: obj.bio, photo_url: obj.photoUrl || null,
-    av_class: obj.avClass, verified: obj.verified,
-    top_rated: obj.topRated, active: obj.active, rating: obj.rating || 0
-  };
-  if (obj._isNew) {
-    return sbPost('tutors', row);
-  } else {
-    return sbPatch('tutors', `id=eq.${obj.id}`, row);
-  }
-}
-
-async function sbDeleteTutor(id) { return sbDelete('tutors', `id=eq.${id}`); }
-
-async function sbApproveReg(id) {
-  return sbPatch('registrations', `id=eq.${id}`, { status: 'approved' });
-}
-async function sbRejectReg(id) {
-  return sbPatch('registrations', `id=eq.${id}`, { status: 'rejected' });
-}
-async function sbApproveReview(id) { return sbPatch('reviews', `id=eq.${id}`, { status: 'approved' }); }
-async function sbRejectReview(id) { return sbPatch('reviews', `id=eq.${id}`, { status: 'rejected' }); }
-
-async function sbGetVisits() { return sbGet('visits?order=visited_at.desc'); }
-async function sbGetContacts() { return sbGet('contacts?order=contacted_at.desc'); }
-async function sbGetProfileViews() { return sbGet('profile_views?order=viewed_at.desc'); }
-// ---- AUTH ----
+// ============================================
+// AUTH
+// ============================================
 let ADMIN_USER = localStorage.getItem('guruvio_admin_user') || 'admin';
 let ADMIN_PASS = localStorage.getItem('guruvio_admin_pass') || 'guruvio123';
 
 function doLogin() {
-  const u = document.getElementById('login-user').value;
+  const u = document.getElementById('login-user').value.trim();
   const p = document.getElementById('login-pass').value;
   if (u === ADMIN_USER && p === ADMIN_PASS) {
     document.getElementById('login-screen').style.display = 'none';
@@ -698,29 +661,20 @@ function doLogout() {
   document.getElementById('login-pass').value = '';
 }
 
-// ---- DATA ----
-function getTutors() {
-  const s = localStorage.getItem('guruvio_tutors');
-  if (!s) { localStorage.setItem('guruvio_tutors', JSON.stringify(DEFAULT_TUTORS)); return DEFAULT_TUTORS; }
-  return JSON.parse(s);
-}
-function saveTutors(t) { localStorage.setItem('guruvio_tutors', JSON.stringify(t)); }
-function getRegs() { return JSON.parse(localStorage.getItem('guruvio_registrations') || '[]'); }
-function saveRegs(r) { localStorage.setItem('guruvio_registrations', JSON.stringify(r)); }
-// visits and contacts fetched from Supabase directly
-
-// ---- NAV ----
+// ============================================
+// NAV
+// ============================================
 function showPage(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  el.classList.add('active');
-  if(id==='dashboard') renderDashboard();
-  if(id==='tutors') renderTutorTable();
-  if(id==='registrations') renderRegTable();
-  if(id==='reviews') { filterReviews('pending'); }
-  if(id==='traffic') renderTraffic();
-  if(id==='config') loadConfig();
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  if (id === 'dashboard')     initDashboard();
+  if (id === 'tutors')        loadTutorsPage();
+  if (id === 'registrations') loadRegsPage();
+  if (id === 'reviews')       loadReviewsPage('pending');
+  if (id === 'traffic')       loadTrafficPage();
+  if (id === 'config')        loadConfig();
 }
 
 function setMobNav(el) {
@@ -734,92 +688,54 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 2800);
 }
 
-// ---- DASHBOARD ----
-async function renderDashboard() {
-  // Show cached data instantly if available
-  const cachedTutors = getTutors();
-  const cachedRegs = getRegs();
-  const cachedReviews = getReviews();
-  if (cachedTutors.length) {
-    document.getElementById('d-total').textContent = cachedTutors.length;
-    document.getElementById('d-active').textContent = cachedTutors.filter(t=>t.active).length;
-    document.getElementById('d-pending').textContent = cachedRegs.filter(r=>r.status==='pending').length;
-    document.getElementById('d-regs').textContent = cachedRegs.length;
-    const revPendEl = document.getElementById('d-rev-pending');
-    if (revPendEl) revPendEl.textContent = cachedReviews.filter(r=>r.status==='pending').length;
-  }
-
-  // Fetch critical data first (fast — small tables)
-  const [tutors, regs, reviews] = await Promise.all([
-    sbGet('tutors?select=id,name,area,active&order=id.asc'),
-    sbGet('registrations?select=id,name,phone,area,subjects,classes,exp,age,qual,edu,bio,photo_url,av_class,status,submitted_at,password&order=submitted_at.desc'),
-    sbGet('reviews?select=id,tutor_id,reviewer_name,review_text,rating,status,created_at&order=created_at.desc')
-  ]);
-
-  // Update cache
-  const fullTutors = await sbGet('tutors?order=id.asc');
-  localStorage.setItem('guruvio_tutors', JSON.stringify(fullTutors.map(t => ({
-    id:t.id, name:t.name, phone:t.phone, area:t.area,
-    subjects:t.subjects||[], classes:t.classes||[],
-    exp:t.exp||'', age:t.age, qual:t.qual||'', edu:t.edu||'',
-    bio:t.bio||'', photoUrl:t.photo_url, avClass:t.av_class||'av1',
-    verified:t.verified, topRated:t.top_rated, active:t.active,
-    rating:t.rating||0, avatar:(t.name||'T')[0].toUpperCase()
-  }))));
-  localStorage.setItem('guruvio_registrations', JSON.stringify(regs.map(r => ({
-    id:r.id, name:r.name, phone:r.phone, area:r.area,
-    subjects:r.subjects||[], classes:r.classes||[],
-    exp:r.exp||'', age:r.age, qual:r.qual||'', edu:r.edu||'',
-    bio:r.bio||'', photoUrl:r.photo_url, avClass:r.av_class||'av1',
-    status:r.status, submittedAt:r.submitted_at, password:r.password||null
-  }))));
-  localStorage.setItem('guruvio_reviews', JSON.stringify(reviews.map(r => ({
-    id:r.id, tutorId:r.tutor_id, name:r.reviewer_name,
-    text:r.review_text, rating:r.rating, status:r.status, date:r.created_at
-  }))));
-
-  // Update dashboard stat cards
-  document.getElementById('d-total').textContent = tutors.length;
-  document.getElementById('d-active').textContent = tutors.filter(t=>t.active).length;
-  document.getElementById('d-pending').textContent = regs.filter(r=>r.status==='pending').length;
-  document.getElementById('d-regs').textContent = regs.length;
-  const revPendEl = document.getElementById('d-rev-pending');
-  if (revPendEl) revPendEl.textContent = reviews.filter(r=>r.status==='pending').length;
-
-  // Update nav badges immediately
-  const pendingRegs = regs.filter(r=>r.status==='pending').length;
-  const regBadge = document.getElementById('reg-badge');
-  if (pendingRegs > 0) { regBadge.textContent = pendingRegs; regBadge.style.display = 'inline'; }
-  else regBadge.style.display = 'none';
-  const pendingRevs = reviews.filter(r=>r.status==='pending').length;
-  const revBadge = document.getElementById('review-badge');
-  if (revBadge) {
-    if (pendingRevs > 0) { revBadge.textContent = pendingRevs; revBadge.style.display = 'inline'; }
-    else revBadge.style.display = 'none';
-  }
-
-  // Fetch visits/contacts in background — only last 7 days, limit 500
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const since = sevenDaysAgo.toISOString();
-
-  const [visits, contacts] = await Promise.all([
-    sbGet(`visits?visited_at=gte.${since}&order=visited_at.desc&limit=500`),
-    sbGet(`contacts?contacted_at=gte.${since}&order=contacted_at.desc&limit=500`)
-  ]);
-
-  // Get total counts via head request
-  const [visitsTotal, contactsTotal] = await Promise.all([
-    sbCount('visits'),
-    sbCount('contacts')
-  ]);
-
-  document.getElementById('d-visits').textContent = visitsTotal;
-  document.getElementById('d-contacts').textContent = contactsTotal;
-
-  renderVisitChart(visits);
-  renderAreaChart();
+// ============================================
+// INIT
+// ============================================
+async function initAdmin() {
+  initDashboard();
 }
+
+// ============================================
+// DASHBOARD
+// ============================================
+async function initDashboard() {
+  // Fetch all counts in parallel
+  const [tutors, regs, reviews] = await Promise.all([
+    sbGet('tutors', 'select=id,active'),
+    sbGet('registrations', 'select=id,status'),
+    sbGet('reviews', 'select=id,status')
+  ]);
+
+  document.getElementById('d-total').textContent    = tutors.length;
+  document.getElementById('d-active').textContent   = tutors.filter(t => t.active).length;
+  document.getElementById('d-pending').textContent  = regs.filter(r => r.status === 'pending').length;
+  document.getElementById('d-regs').textContent     = regs.length;
+  const rp = document.getElementById('d-rev-pending');
+  if (rp) rp.textContent = reviews.filter(r => r.status === 'pending').length;
+
+  // Visits + contacts (last 7 days only for speed)
+  const since = new Date(); since.setDate(since.getDate()-7);
+  const [visits, contacts] = await Promise.all([
+    sbGet('visits', 'select=id&order=visited_at.desc&limit=500'),
+    sbGet('contacts', 'select=id&order=contacted_at.desc&limit=500')
+  ]);
+  document.getElementById('d-visits').textContent   = visits.length;
+  document.getElementById('d-contacts').textContent = contacts.length;
+
+  updateBadges(regs, reviews);
+  renderAreaChart(tutors);
+  renderVisitChart(await sbGet('visits', 'select=visited_at&order=visited_at.desc&limit=200'));
+}
+
+function updateBadges(regs, reviews) {
+  const pr = (regs||[]).filter(r=>r.status==='pending').length;
+  const rb = document.getElementById('reg-badge');
+  if (rb) { rb.textContent = pr; rb.style.display = pr > 0 ? 'inline' : 'none'; }
+  const pv = (reviews||[]).filter(r=>r.status==='pending').length;
+  const vb = document.getElementById('review-badge');
+  if (vb) { vb.textContent = pv; vb.style.display = pv > 0 ? 'inline' : 'none'; }
+}
+
 function renderVisitChart(visits) {
   const days = {};
   for (let i=6; i>=0; i--) {
@@ -827,81 +743,227 @@ function renderVisitChart(visits) {
     days[d.toISOString().split('T')[0]] = 0;
   }
   (visits||[]).forEach(v => {
-    const k = (v.visited_at||v.time||'').split('T')[0];
+    const k = (v.visited_at||'').split('T')[0];
     if (days[k] !== undefined) days[k]++;
   });
   const max = Math.max(...Object.values(days), 1);
   const el = document.getElementById('visit-chart');
   if (el) el.innerHTML = Object.entries(days).map(([d,c]) =>
-    `<div class="bar-row"><div class="bar-label">${d.slice(5)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,c/max*100)}%"></div></div><div class="bar-val">${c}</div></div>`
+    '<div class="bar-row"><div class="bar-label">' + d.slice(5) + '</div><div class="bar-track"><div class="bar-fill" style="width:' + Math.max(4,c/max*100) + '%"></div></div><div class="bar-val">' + c + '</div></div>'
   ).join('');
 }
 
-function renderAreaChart() {
-  const tutors = getTutors();
+function renderAreaChart(tutors) {
+  const t = tutors || JSON.parse(localStorage.getItem('guruvio_tutors_cache') || '[]');
   const areas = {};
-  tutors.forEach(t => { areas[t.area] = (areas[t.area]||0)+1; });
+  t.forEach(x => { if(x.area) areas[x.area] = (areas[x.area]||0)+1; });
   const sorted = Object.entries(areas).sort((a,b)=>b[1]-a[1]).slice(0,7);
   const max = Math.max(...sorted.map(s=>s[1]),1);
-  document.getElementById('area-chart').innerHTML = sorted.map(([a,c]) =>
-    `<div class="bar-row"><div class="bar-label" style="font-size:11px">${a}</div><div class="bar-track"><div class="bar-fill" style="width:${c/max*100}%;background:var(--teal)"></div></div><div class="bar-val">${c}</div></div>`
+  const el = document.getElementById('area-chart');
+  if (el) el.innerHTML = sorted.map(([a,c]) =>
+    '<div class="bar-row"><div class="bar-label" style="font-size:11px">' + a + '</div><div class="bar-track"><div class="bar-fill" style="width:' + (c/max*100) + '%;background:var(--teal)"></div></div><div class="bar-val">' + c + '</div></div>'
   ).join('');
 }
 
-// ---- TUTOR TABLE ----
-function buildTutorRows(tutors) {
-  if (!tutors.length) return '<tr class="empty-row"><td colspan="6">No tutors found</td></tr>';
-  return tutors.map(t => {
-    const thumbHtml = t.photoUrl
-      ? `<img src="${t.photoUrl}" style="width:32px;height:32px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:8px">`
-      : `<span style="display:inline-flex;width:32px;height:32px;border-radius:8px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:13px;vertical-align:middle;margin-right:8px">${t.avatar||t.name[0]}</span>`;
-    return `<tr>
-      <td>${thumbHtml}<strong>${t.name}</strong>${t.age ? `<span style="font-size:11px;color:var(--muted);margin-left:6px">${t.age}y</span>` : ''}</td>
-      <td>${t.area}</td>
-      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(t.subjects||[]).join(', ')}</td>
-      <td>${t.rating > 0 ? '★ '+t.rating : '—'}</td>
-      <td><span class="pill ${t.active?'pill-green':'pill-red'}">${t.active?'Active':'Hidden'}</span></td>
-      <td>
-        <button class="action-btn" onclick="openEditTutor(${t.id})">Edit</button>
-        <button class="action-btn danger" onclick="deleteTutor(${t.id})">Delete</button>
-      </td>
-    </tr>`;
-  }).join('');
+// ============================================
+// MANAGE TUTORS
+// ============================================
+let _tutors = [];
+
+async function loadTutorsPage() {
+  const tbody = document.getElementById('tutor-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:20px">Loading tutors...</td></tr>';
+  _tutors = await sbGet('tutors', 'order=id.asc');
+  renderTutorTable();
 }
 
-function renderTutorTable(filter='') {
-  let tutors = getTutors();
+function getTutors() { return _tutors; }
+function saveTutors(t) { _tutors = t; }
+
+function renderTutorTable(filter) {
+  let tutors = _tutors;
   if (filter) tutors = tutors.filter(t =>
-    t.name.toLowerCase().includes(filter) ||
-    t.area.toLowerCase().includes(filter) ||
+    (t.name||'').toLowerCase().includes(filter) ||
+    (t.area||'').toLowerCase().includes(filter) ||
     (t.subjects||[]).join(' ').toLowerCase().includes(filter)
   );
   const tbody = document.getElementById('tutor-tbody');
-  tbody.innerHTML = buildTutorRows(tutors);
-
-  // Sync in background only when no filter active
-  if (!filter) {
-    syncTutors().then(() => {
-      let fresh = getTutors();
-      tbody.innerHTML = buildTutorRows(fresh);
-    });
-  }
+  if (!tutors.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No tutors found</td></tr>'; return; }
+  tbody.innerHTML = tutors.map(t => {
+    const av = t.photo_url
+      ? '<img src="' + t.photo_url + '" style="width:32px;height:32px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:8px">'
+      : '<span style="display:inline-flex;width:32px;height:32px;border-radius:8px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:13px;vertical-align:middle;margin-right:8px">' + (t.name||'?')[0] + '</span>';
+    return '<tr>' +
+      '<td>' + av + '<strong>' + t.name + '</strong>' + (t.age ? '<span style="font-size:11px;color:var(--muted);margin-left:6px">' + t.age + 'y</span>' : '') + '</td>' +
+      '<td>' + (t.area||'—') + '</td>' +
+      '<td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (t.subjects||[]).join(', ') + '</td>' +
+      '<td>' + (t.rating > 0 ? '★ '+t.rating : '—') + '</td>' +
+      '<td><span class="pill ' + (t.active?'pill-green':'pill-red') + '">' + (t.active?'Active':'Hidden') + '</span></td>' +
+      '<td><button class="action-btn" onclick="openEditTutor(' + t.id + ')">Edit</button> <button class="action-btn danger" onclick="deleteTutor(' + t.id + ')">Delete</button></td>' +
+      '</tr>';
+  }).join('');
 }
 
 function filterTutorTable(v) { renderTutorTable(v.toLowerCase()); }
 
-// ---- ADD/EDIT TUTOR ----
+// ============================================
+// REGISTRATIONS
+// ============================================
+let _regs = [];
+
+async function loadRegsPage() {
+  const tbody = document.getElementById('reg-tbody');
+  tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:20px">Loading registrations...</td></tr>';
+
+  _regs = await sbGet('registrations', 'order=submitted_at.desc');
+  console.log('Fetched registrations:', _regs.length, _regs);
+
+  if (!_regs.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No registrations yet</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = _regs.map(r => {
+    const av = r.photo_url
+      ? '<img src="' + r.photo_url + '" style="width:28px;height:28px;border-radius:7px;object-fit:cover;vertical-align:middle;margin-right:7px">'
+      : '<span style="display:inline-flex;width:28px;height:28px;border-radius:7px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:12px;vertical-align:middle;margin-right:7px">' + (r.name||'?')[0] + '</span>';
+    const pillClass = r.status==='pending' ? 'pill-yellow' : r.status==='approved' ? 'pill-green' : 'pill-red';
+    const actions = r.status==='pending'
+      ? '<button class="action-btn success" onclick="approveReg(' + r.id + ')">Approve</button> <button class="action-btn danger" onclick="rejectReg(' + r.id + ')">Reject</button>'
+      : '';
+    return '<tr>' +
+      '<td>' + av + '<strong>' + r.name + '</strong></td>' +
+      '<td>' + r.phone + '</td>' +
+      '<td>' + (r.area||'—') + '</td>' +
+      '<td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (r.subjects||[]).join(', ') + '</td>' +
+      '<td>' + (r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : '—') + '</td>' +
+      '<td><span class="pill ' + pillClass + '">' + r.status + '</span></td>' +
+      '<td>' + actions + '</td>' +
+      '</tr>';
+  }).join('');
+
+  // Update badge
+  const pending = _regs.filter(r=>r.status==='pending').length;
+  const rb = document.getElementById('reg-badge');
+  if (rb) { rb.textContent = pending; rb.style.display = pending > 0 ? 'inline' : 'none'; }
+}
+
+function getRegs() { return _regs; }
+function saveRegs(r) { _regs = r; }
+function updateRegBadge() {
+  const pending = _regs.filter(r=>r.status==='pending').length;
+  const rb = document.getElementById('reg-badge');
+  if (rb) { rb.textContent = pending; rb.style.display = pending > 0 ? 'inline' : 'none'; }
+}
+
+async function approveReg(id) {
+  const reg = _regs.find(r => r.id === id);
+  if (!reg) return;
+  toast('Approving...');
+  const ok1 = await sbPatch('registrations', id, { status: 'approved' });
+  if (!ok1) { toast('Failed to update registration.'); return; }
+  const ok2 = await sbPost('tutors', {
+    name: reg.name, phone: reg.phone, area: reg.area,
+    exp: reg.exp || null, age: reg.age || null,
+    qual: reg.qual || null, edu: reg.edu || null,
+    bio: reg.bio || null, photo_url: reg.photo_url || null,
+    subjects: reg.subjects || [], classes: reg.classes || [],
+    av_class: reg.av_class || 'av1',
+    verified: false, top_rated: false, active: true, rating: 0,
+    password: reg.password || String(reg.phone).replace(/\D/g,'').slice(-4)
+  });
+  if (!ok2) { toast('Failed to create tutor profile.'); return; }
+  toast(reg.name + ' approved and published!');
+  loadRegsPage();
+}
+
+async function rejectReg(id) {
+  if (!confirm('Reject this application?')) return;
+  await sbPatch('registrations', id, { status: 'rejected' });
+  toast('Registration rejected.');
+  loadRegsPage();
+}
+
+// ============================================
+// REVIEWS
+// ============================================
+let _reviews = [];
+
+async function loadReviewsPage(status) {
+  _reviews = await sbGet('reviews', 'order=created_at.desc');
+  filterReviews(status || 'pending');
+  updateBadges(null, _reviews);
+}
+
+function getReviews() { return _reviews; }
+function saveReviews(r) { _reviews = r; }
+function updateReviewBadge() { updateBadges(null, _reviews); }
+
+function filterReviews(status) {
+  let reviews = _reviews;
+  if (status !== 'all') reviews = reviews.filter(r => r.status === status);
+  renderReviewsGrid(reviews);
+}
+
+function renderReviewsGrid(reviews) {
+  const tutorsCache = _tutors;
+  const grid = document.getElementById('reviews-grid');
+  if (!reviews.length) {
+    grid.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;background:var(--card);border-radius:16px;border:1px solid var(--border)">No reviews found.</div>';
+    return;
+  }
+  grid.innerHTML = reviews.map(r => {
+    const tutor = tutorsCache.find(t => t.id === r.tutor_id);
+    const tutorName = tutor ? tutor.name : 'Unknown Tutor';
+    const stars = '★'.repeat(r.rating||0) + '☆'.repeat(5-(r.rating||0));
+    const pillClass = r.status==='approved' ? 'pill-green' : r.status==='rejected' ? 'pill-red' : 'pill-yellow';
+    const actions = r.status==='pending'
+      ? '<button class="action-btn success" onclick="approveReview(' + r.id + ')">✓ Approve</button> <button class="action-btn danger" onclick="rejectReview(' + r.id + ')">✗ Reject</button>'
+      : r.status==='approved'
+        ? '<button class="action-btn danger" onclick="rejectReview(' + r.id + ')">Remove</button>'
+        : '<button class="action-btn success" onclick="approveReview(' + r.id + ')">Re-approve</button>';
+    return '<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:12px">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">' +
+        '<div>' +
+          '<div style="font-weight:600;font-size:14px">' + r.reviewer_name + ' <span style="color:var(--accent)">' + stars + '</span></div>' +
+          '<div style="font-size:12px;color:var(--muted);margin-top:3px">On <strong style="color:var(--light)">' + tutorName + '</strong> · ' + new Date(r.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) + '</div>' +
+        '</div>' +
+        '<span class="pill ' + pillClass + '">' + r.status + '</span>' +
+      '</div>' +
+      '<div style="font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:14px">"' + r.review_text + '"</div>' +
+      '<div style="display:flex;gap:8px">' + actions + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+async function approveReview(id) {
+  await sbPatch('reviews', id, { status: 'approved' });
+  await loadReviewsPage('pending');
+  toast('Review approved!');
+}
+
+async function rejectReview(id) {
+  await sbPatch('reviews', id, { status: 'rejected' });
+  await loadReviewsPage('pending');
+  toast('Review rejected.');
+}
+
+function updateTutorRating(tutorId) { /* handled by approvals */ }
+
+// ============================================
+// ADD/EDIT TUTOR MODAL
+// ============================================
 let adminPhotoUrl = null;
 
 function handleAdminPhoto(input) {
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];
-  if (file.size > 2 * 1024 * 1024) { toast('Photo must be under 2MB.'); return; }
+  if (file.size > 2*1024*1024) { toast('Photo must be under 2MB.'); return; }
   const reader = new FileReader();
   reader.onload = e => {
     adminPhotoUrl = e.target.result;
     const prev = document.getElementById('m-photo-preview');
-    prev.innerHTML = `<img src="${adminPhotoUrl}" alt="Photo" style="width:100%;height:100%;object-fit:cover;">`;
+    prev.innerHTML = '<img src="' + adminPhotoUrl + '" style="width:100%;height:100%;object-fit:cover;">';
   };
   reader.readAsDataURL(file);
 }
@@ -909,17 +971,10 @@ function handleAdminPhoto(input) {
 function resetAdminModal() {
   adminPhotoUrl = null;
   document.getElementById('m-photo-preview').innerHTML = '?';
-  document.getElementById('m-photo-input').value = '';
+  const fields = ['m-name','m-phone','m-age','m-exp','m-rating','m-qual','m-edu','m-bio'];
+  fields.forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('m-id').value = '';
-  document.getElementById('m-name').value = '';
-  document.getElementById('m-phone').value = '';
-  document.getElementById('m-age').value = '';
-  document.getElementById('m-exp').value = '';
-  document.getElementById('m-rating').value = '';
   document.getElementById('m-area').value = '';
-  document.getElementById('m-qual').value = '';
-  document.getElementById('m-edu').value = '';
-  document.getElementById('m-bio').value = '';
   document.getElementById('m-avclass').value = 'av1';
   document.getElementById('m-verified').value = 'true';
   document.getElementById('m-toprated').value = 'false';
@@ -935,34 +990,29 @@ function openAddTutor() {
 }
 
 function openEditTutor(id) {
-  const t = getTutors().find(x=>x.id===id);
-  if(!t) return;
+  const t = _tutors.find(x => x.id === id);
+  if (!t) { toast('Tutor not found. Refresh the page.'); return; }
   resetAdminModal();
   document.getElementById('modal-title').textContent = 'Edit Tutor Profile';
   document.getElementById('m-id').value = id;
-  document.getElementById('m-name').value = t.name;
-  document.getElementById('m-phone').value = t.phone;
+  document.getElementById('m-name').value = t.name || '';
+  document.getElementById('m-phone').value = t.phone || '';
   document.getElementById('m-age').value = t.age || '';
   document.getElementById('m-exp').value = (t.exp||'').replace(' years','');
   document.getElementById('m-rating').value = t.rating || '';
-  document.getElementById('m-area').value = t.area;
-  document.getElementById('m-qual').value = t.qual||'';
-  document.getElementById('m-edu').value = t.edu||'';
-  document.getElementById('m-bio').value = t.bio||'';
-  document.getElementById('m-avclass').value = t.avClass||'av1';
-  document.getElementById('m-verified').value = t.verified.toString();
-  document.getElementById('m-toprated').value = t.topRated.toString();
-  document.getElementById('m-active').value = t.active.toString();
-  document.querySelectorAll('[id^=ms]').forEach(c=>{ c.checked = t.subjects.includes(c.value); });
-  document.querySelectorAll('[id^=mc]').forEach(c=>{ c.checked = t.classes.includes(c.value); });
-  // Show existing photo
-  const prev = document.getElementById('m-photo-preview');
-  if (t.photoUrl) {
-    adminPhotoUrl = t.photoUrl;
-    prev.innerHTML = `<img src="${t.photoUrl}" alt="${t.name}" style="width:100%;height:100%;object-fit:cover;">`;
-  } else {
-    adminPhotoUrl = null;
-    prev.innerHTML = t.avatar || t.name[0].toUpperCase();
+  document.getElementById('m-area').value = t.area || '';
+  document.getElementById('m-qual').value = t.qual || '';
+  document.getElementById('m-edu').value = t.edu || '';
+  document.getElementById('m-bio').value = t.bio || '';
+  document.getElementById('m-avclass').value = t.av_class || 'av1';
+  document.getElementById('m-verified').value = String(t.verified);
+  document.getElementById('m-toprated').value = String(t.top_rated);
+  document.getElementById('m-active').value = String(t.active);
+  document.querySelectorAll('[id^=ms]').forEach(c => { c.checked = (t.subjects||[]).includes(c.value); });
+  document.querySelectorAll('[id^=mc]').forEach(c => { c.checked = (t.classes||[]).includes(c.value); });
+  if (t.photo_url) {
+    adminPhotoUrl = t.photo_url;
+    document.getElementById('m-photo-preview').innerHTML = '<img src="' + t.photo_url + '" style="width:100%;height:100%;object-fit:cover;">';
   }
   document.getElementById('tutor-modal').classList.add('open');
 }
@@ -970,317 +1020,106 @@ function openEditTutor(id) {
 function closeModal() { document.getElementById('tutor-modal').classList.remove('open'); }
 
 async function saveTutor() {
+  const id  = document.getElementById('m-id').value;
   const name = document.getElementById('m-name').value.trim();
   const phone = document.getElementById('m-phone').value.trim();
   const area = document.getElementById('m-area').value;
-  if(!name||!phone||!area) { alert('Name, phone and area are required.'); return; }
-  const subjects = [...document.querySelectorAll('[id^=ms]:checked')].map(c=>c.value);
-  const classes  = [...document.querySelectorAll('[id^=mc]:checked')].map(c=>c.value);
+  if (!name||!phone||!area) { alert('Name, phone and area are required.'); return; }
   const expVal = document.getElementById('m-exp').value;
-  const id = document.getElementById('m-id').value;
-  const tutors = getTutors();
-  const existing = id ? tutors.find(t=>t.id===parseInt(id)) : null;
-  const obj = {
-    id: id ? parseInt(id) : Date.now(),
+  const row = {
     name, phone, area,
-    age: parseInt(document.getElementById('m-age').value) || existing?.age || null,
-    exp: expVal ? expVal+' years' : (existing?.exp || '—'),
-    rating: parseFloat(document.getElementById('m-rating').value) || existing?.rating || 0,
-    subjects, classes,
+    age: parseInt(document.getElementById('m-age').value)||null,
+    exp: expVal ? expVal+' years' : null,
+    rating: parseFloat(document.getElementById('m-rating').value)||0,
     qual: document.getElementById('m-qual').value,
     edu: document.getElementById('m-edu').value,
     bio: document.getElementById('m-bio').value,
-    photoUrl: adminPhotoUrl || existing?.photoUrl || null,
-    verified: document.getElementById('m-verified').value==='true',
-    topRated: document.getElementById('m-toprated').value==='true',
-    active: document.getElementById('m-active').value==='true',
-    avClass: document.getElementById('m-avclass').value,
-    avatar: name[0].toUpperCase()
+    photo_url: adminPhotoUrl || null,
+    av_class: document.getElementById('m-avclass').value,
+    verified: document.getElementById('m-verified').value === 'true',
+    top_rated: document.getElementById('m-toprated').value === 'true',
+    active: document.getElementById('m-active').value === 'true',
+    subjects: [...document.querySelectorAll('[id^=ms]:checked')].map(c=>c.value),
+    classes:  [...document.querySelectorAll('[id^=mc]:checked')].map(c=>c.value)
   };
-  const supaObj = { ...obj, _isNew: !id };
-  await sbSaveTutor(supaObj);
-  await syncTutors();
-  if(id) {
-    const idx = tutors.findIndex(t=>t.id===parseInt(id));
-    if(idx>=0) tutors[idx] = obj;
+  if (id) {
+    await sbPatch('tutors', id, row);
   } else {
-    tutors.push(obj);
+    await sbPost('tutors', row);
   }
-  saveTutors(tutors);
   closeModal();
-  renderTutorTable();
-  toast('Tutor profile saved successfully!');
+  toast('Tutor saved!');
+  loadTutorsPage();
 }
 
 async function deleteTutor(id) {
-  if(!confirm('Delete this tutor profile?')) return;
-  await sbDeleteTutor(id);
-  // Remove from cache immediately
-  const tutors = getTutors().filter(t => t.id !== id);
-  saveTutors(tutors);
-  renderTutorTable();
+  if (!confirm('Delete this tutor?')) return;
+  await sbDelete('tutors', id);
   toast('Tutor deleted.');
-  // Sync in background
-  syncTutors();
+  loadTutorsPage();
 }
 
-// ---- REVIEWS ----
-function getReviews() { return JSON.parse(localStorage.getItem('guruvio_reviews') || '[]'); }
-function saveReviews(r) { localStorage.setItem('guruvio_reviews', JSON.stringify(r)); }
-
-function updateReviewBadge() {
-  const pending = getReviews().filter(r => r.status === 'pending').length;
-  const badge = document.getElementById('review-badge');
-  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline'; }
-  else badge.style.display = 'none';
-}
-
-function filterReviews(status) {
-  // Show cached immediately
-  let reviews = getReviews();
-  if (status !== 'all') reviews = reviews.filter(r => r.status === status);
-  renderReviewsGrid(reviews);
-
-  // Sync in background and refresh
-  syncReviews().then(() => {
-    let fresh = getReviews();
-    if (status !== 'all') fresh = fresh.filter(r => r.status === status);
-    renderReviewsGrid(fresh);
-    updateReviewBadge();
-  });
-}
-
-function renderReviewsGrid(reviews) {
-  const tutors = getTutors();
-  const grid = document.getElementById('reviews-grid');
-  if (!reviews.length) {
-    grid.innerHTML = `<div style="text-align:center;color:var(--muted);padding:40px;background:var(--card);border-radius:16px;border:1px solid var(--border)">No reviews found.</div>`;
-    return;
-  }
-  grid.innerHTML = [...reviews].sort((a,b) => new Date(b.date) - new Date(a.date)).map(r => {
-    const tutor = tutors.find(t => t.id === r.tutorId);
-    const tutorName = tutor ? tutor.name : 'Unknown Tutor';
-    const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
-    const pillClass = r.status === 'approved' ? 'pill-green' : r.status === 'rejected' ? 'pill-red' : 'pill-yellow';
-    return `
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px">
-        <div>
-          <div style="font-weight:600;font-size:14px">${r.name} <span style="color:var(--accent)">${stars}</span></div>
-          <div style="font-size:12px;color:var(--muted);margin-top:3px">On <strong style="color:var(--light)">${tutorName}</strong> · ${new Date(r.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
-        </div>
-        <span class="pill ${pillClass}">${r.status}</span>
-      </div>
-      <div style="font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:14px">"${r.text}"</div>
-      ${r.status === 'pending' ? `
-        <div style="display:flex;gap:8px">
-          <button class="action-btn success" onclick="approveReview(${r.id})">✓ Approve</button>
-          <button class="action-btn danger" onclick="rejectReview(${r.id})">✗ Reject</button>
-        </div>` : r.status === 'approved' ? `
-        <button class="action-btn danger" onclick="rejectReview(${r.id})">Remove</button>` : `
-        <button class="action-btn success" onclick="approveReview(${r.id})">Re-approve</button>`}
-    </div>`;
-  }).join('');
-}
-
-async function approveReview(id) {
-  const reviews = getReviews();
-  const r = reviews.find(x => x.id === id);
-  if (!r) return;
-  await sbApproveReview(id);
-  r.status = 'approved';
-  saveReviews(reviews);
-  // Recalculate tutor rating from approved reviews
-  updateTutorRating(r.tutorId);
-  filterReviews('pending');
-  updateReviewBadge();
-  toast('Review approved and published!');
-}
-
-async function rejectReview(id) {
-  const reviews = getReviews();
-  const r = reviews.find(x => x.id === id);
-  if (!r) return;
-  await sbRejectReview(id);
-  r.status = 'rejected';
-  saveReviews(reviews);
-  updateTutorRating(r.tutorId);
-  filterReviews('pending');
-  updateReviewBadge();
-  toast('Review rejected.');
-}
-
-function updateTutorRating(tutorId) {
-  const approved = getReviews().filter(r => r.tutorId === tutorId && r.status === 'approved');
-  if (!approved.length) return;
-  const avg = approved.reduce((sum, r) => sum + r.rating, 0) / approved.length;
-  const tutors = getTutors();
-  const idx = tutors.findIndex(t => t.id === tutorId);
-  if (idx !== -1) { tutors[idx].rating = Math.round(avg * 10) / 10; saveTutors(tutors); }
-}
-
-// ---- REGISTRATIONS ----
-function updateRegBadge() {
-  const pending = getRegs().filter(r=>r.status==='pending').length;
-  const badge = document.getElementById('reg-badge');
-  if(pending > 0) { badge.textContent = pending; badge.style.display='inline'; }
-  else badge.style.display='none';
-}
-
-async function renderRegTable() {
-  const tbody = document.getElementById('reg-tbody');
-
-  const buildRows = (regs) => {
-    if (!regs.length) return '<tr class="empty-row"><td colspan="7">No registrations yet</td></tr>';
-    return regs.map(r => {
-      const thumbHtml = r.photoUrl
-        ? `<img src="${r.photoUrl}" style="width:28px;height:28px;border-radius:7px;object-fit:cover;vertical-align:middle;margin-right:7px">`
-        : `<span style="display:inline-flex;width:28px;height:28px;border-radius:7px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:12px;vertical-align:middle;margin-right:7px">${(r.name||'?')[0]}</span>`;
-      return `<tr>
-        <td>${thumbHtml}<strong>${r.name}</strong></td>
-        <td>${r.phone}</td>
-        <td>${r.area}</td>
-        <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${(r.subjects||[]).join(', ')}</td>
-        <td>${r.submittedAt ? new Date(r.submittedAt).toLocaleDateString() : '—'}</td>
-        <td><span class="pill ${r.status==='pending'?'pill-yellow':r.status==='approved'?'pill-green':'pill-red'}">${r.status}</span></td>
-        <td>${r.status==='pending'?`<button class="action-btn success" onclick="approveReg(${r.id})">Approve</button> <button class="action-btn danger" onclick="rejectReg(${r.id})">Reject</button>`:''}</td>
-      </tr>`;
-    }).join('');
-  };
-
-  // Show cached first instantly
-  const cached = getRegs();
-  if (cached.length) {
-    tbody.innerHTML = buildRows(cached);
-  } else {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7" style="color:var(--muted)">Fetching registrations...</td></tr>';
-  }
-
-  // Always fetch fresh from Supabase
-  const fresh = await syncRegistrations();
-  tbody.innerHTML = buildRows(fresh.length ? fresh : getRegs());
-  updateRegBadge();
-}
-
-async function approveReg(id) {
-  const regs = getRegs();
-  const reg = regs.find(r=>r.id===id);
-  if(!reg) return;
-
-  // 1. Mark registration as approved in Supabase
-  await sbApproveReg(id);
-
-  // 2. Insert new tutor into Supabase tutors table (with password)
-  await sbPost('tutors', {
-    name: reg.name,
-    phone: reg.phone,
-    area: reg.area,
-    exp: reg.exp || null,
-    age: reg.age || null,
-    qual: reg.qual || null,
-    edu: reg.edu || null,
-    bio: reg.bio || null,
-    photo_url: reg.photoUrl || null,
-    subjects: reg.subjects || [],
-    classes: reg.classes || [],
-    av_class: reg.avClass || 'av1',
-    verified: false,
-    top_rated: false,
-    active: true,
-    rating: 0,
-    password: reg.password || String(reg.phone).replace(/\D/g,'').slice(-4)
-  });
-
-  // 3. Sync cache
-  reg.status = 'approved';
-  saveRegs(regs);
-  await syncTutors();
-  renderRegTable();
-  updateRegBadge();
-  toast(`${reg.name}'s profile approved and is now live!`);
-}
-
-async function rejectReg(id) {
-  if(!confirm('Reject this application?')) return;
-  await sbRejectReg(id);
-  const regs = getRegs();
-  const reg = regs.find(r=>r.id===id);
-  if(reg) reg.status = 'rejected';
-  saveRegs(regs);
-  renderRegTable();
-  updateRegBadge();
-  toast('Application rejected.');
-}
-
-// ---- TRAFFIC ----
-async function renderTraffic() {
-  const [visits, contacts] = await Promise.all([sbGetVisits(), sbGetContacts()]);
-  const visits_mapped = visits.map(v=>({time:v.visited_at}));
-  const contacts_mapped = contacts.map(c=>({time:c.contacted_at, tutorId:c.tutor_id}));
+// ============================================
+// TRAFFIC
+// ============================================
+async function loadTrafficPage() {
+  const [visits, contacts] = await Promise.all([
+    sbGet('visits', 'order=visited_at.desc&limit=500'),
+    sbGet('contacts', 'order=contacted_at.desc&limit=200')
+  ]);
   const today = new Date().toISOString().split('T')[0];
   const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
-  document.getElementById('t-today').textContent = visits_mapped.filter(v=>v.time.startsWith(today)).length;
-  document.getElementById('t-week').textContent = visits_mapped.filter(v=>new Date(v.time)>=weekAgo).length;
-  document.getElementById('t-total').textContent = visits_mapped.length;
-  document.getElementById('t-contacts').textContent = contacts_mapped.length;
-  // 14 day chart
-  const days = {};
-  for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days[d.toISOString().split('T')[0]]=0;}
-  visits.forEach(v=>{const k=v.time.split('T')[0];if(days[k]!==undefined)days[k]++;});
-  const max = Math.max(...Object.values(days),1);
-  document.getElementById('traffic-chart').innerHTML = Object.entries(days).map(([d,c])=>
-    `<div class="bar-row"><div class="bar-label" style="font-size:10px;width:60px">${d.slice(5)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,c/max*100)}%;background:var(--teal)"></div></div><div class="bar-val">${c}</div></div>`
-  ).join('');
-  // Recent activity
-  const allEvents = [
-    ...visits.map(v=>({time:v.time,event:'Page Visit',detail:'Home page'})),
-    ...contacts.map(c=>({time:c.time,event:'WhatsApp Click',detail:'Tutor ID: '+c.tutorId})),
-    ...getRegs().map(r=>({time:r.submittedAt,event:'Registration',detail:r.name+' — '+r.area}))
-  ].sort((a,b)=>new Date(b.time)-new Date(a.time)).slice(0,20);
-  document.getElementById('activity-tbody').innerHTML = allEvents.length
-    ? allEvents.map(e=>`<tr><td>${new Date(e.time).toLocaleString()}</td><td><span class="pill ${e.event==='Page Visit'?'pill-blue':e.event==='WhatsApp Click'?'pill-green':'pill-yellow'}">${e.event}</span></td><td>${e.detail}</td></tr>`).join('')
-    : '<tr class="empty-row"><td colspan="3">No activity yet</td></tr>';
+  document.getElementById('t-today').textContent    = visits.filter(v=>(v.visited_at||'').startsWith(today)).length;
+  document.getElementById('t-week').textContent     = visits.filter(v=>new Date(v.visited_at)>=weekAgo).length;
+  document.getElementById('t-total').textContent    = visits.length;
+  document.getElementById('t-contacts').textContent = contacts.length;
+  renderVisitChart(visits);
 }
 
-// ---- CONFIG ----
+// ============================================
+// CONFIG
+// ============================================
 function loadConfig() {
   const cfg = JSON.parse(localStorage.getItem('guruvio_config')||'{}');
-  if(cfg.name) document.getElementById('cfg-name').value = cfg.name;
-  if(cfg.tagline) document.getElementById('cfg-tagline').value = cfg.tagline;
-  if(cfg.email) document.getElementById('cfg-email').value = cfg.email;
-  if(cfg.wa) document.getElementById('cfg-wa').value = cfg.wa;
+  document.getElementById('cfg-name').value     = cfg.name     || 'Guruvio';
+  document.getElementById('cfg-tagline').value  = cfg.tagline  || 'Find Your Tutor in Trivandrum';
+  document.getElementById('cfg-email').value    = cfg.email    || 'hello@guruvio.com';
+  document.getElementById('cfg-wa').value       = cfg.wa       || '919400000000';
+  document.getElementById('cfg-user').value     = ADMIN_USER;
 }
 
 function saveConfig() {
   const cfg = {
-    name:document.getElementById('cfg-name').value,
-    tagline:document.getElementById('cfg-tagline').value,
-    email:document.getElementById('cfg-email').value,
-    wa:document.getElementById('cfg-wa').value
+    name:    document.getElementById('cfg-name').value,
+    tagline: document.getElementById('cfg-tagline').value,
+    email:   document.getElementById('cfg-email').value,
+    wa:      document.getElementById('cfg-wa').value
   };
   localStorage.setItem('guruvio_config', JSON.stringify(cfg));
-  toast('Configuration saved!');
+  toast('Settings saved!');
 }
 
 function saveCreds() {
-  const user = document.getElementById('cfg-user').value.trim();
+  const user    = document.getElementById('cfg-user').value.trim();
   const newpass = document.getElementById('cfg-newpass').value;
-  if(user) { ADMIN_USER = user; localStorage.setItem('guruvio_admin_user',user); }
-  if(newpass) { ADMIN_PASS = newpass; localStorage.setItem('guruvio_admin_pass',newpass); }
-  document.getElementById('cfg-newpass').value = '';
+  if (user)    { ADMIN_USER = user;    localStorage.setItem('guruvio_admin_user', user); }
+  if (newpass) { ADMIN_PASS = newpass; localStorage.setItem('guruvio_admin_pass', newpass); }
   toast('Credentials updated!');
 }
 
-function toggleFeature(btn) {
-  btn.classList.toggle('on');
-  toast('Setting updated');
-}
+function toggleFeature(btn) { btn.classList.toggle('on'); }
 
-// ---- INIT ----
-async function initAdmin() {
-  // Show cached data instantly (no waiting)
-  renderDashboard();
-}
+// ============================================
+// RENDERDASBOARD ALIAS (called from showPage)
+// ============================================
+function renderDashboard() { initDashboard(); }
+
+// Alias old functions for any remaining onclick handlers
+function syncTutors() { return loadTutorsPage(); }
+function syncRegistrations() { return loadRegsPage(); }
+function renderRegTable() { return loadRegsPage(); }
+function renderTafficPage() { return loadTrafficPage(); }
+function renderTraffic() { return loadTrafficPage(); }
 </script>
 </body>
 </html>

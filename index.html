@@ -669,12 +669,31 @@ async function getApprovedReviews(tutorId) {
 }
 
 // ---- WHATSAPP ----
-function waLink(phone, name) {
-  let clean = String(phone).replace(/\D/g, '');
+function waClean(phone) {
+  let clean = String(phone || '').replace(/\D/g, '');
   if (clean.startsWith('0')) clean = clean.slice(1);
-  if (clean.length === 10) clean = '91' + clean;
-  const msg = encodeURIComponent(`Hello ${name}, I found your profile on Guruvio. I need a tutor for my child and your profile looks great. Can we talk about availability and charges?`);
-  return `https://wa.me/${clean}?text=${msg}`;
+  if (clean.startsWith('91') && clean.length === 12) return clean;
+  if (clean.length === 10) return '91' + clean;
+  if (clean.length === 11 && clean.startsWith('0')) return '91' + clean.slice(1);
+  return clean;
+}
+
+function waLink(phone, name) {
+  const clean = waClean(phone);
+  const msg = encodeURIComponent('Hello ' + name + ', I found your profile on Guruvio. I need a tutor for my child and your profile looks great. Can we talk about availability and charges?');
+  return 'https://wa.me/' + clean + '?text=' + msg;
+}
+
+function openWhatsApp(phone, name, tutorId) {
+  const clean = waClean(phone);
+  if (!clean || clean.length < 10) {
+    alert('This tutor has not added a valid WhatsApp number yet.');
+    return;
+  }
+  logContact(tutorId);
+  const msg = encodeURIComponent('Hello ' + name + ', I found your profile on Guruvio. I need a tutor for my child and your profile looks great. Can we talk about availability and charges?');
+  const url = 'https://wa.me/' + clean + '?text=' + msg;
+  window.open(url, '_blank');
 }
 function waIcon() {
   return `<svg class="wa-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.549 4.122 1.512 5.862L.057 23.428a.5.5 0 0 0 .614.614l5.566-1.455A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.946a9.94 9.94 0 0 1-5.073-1.39l-.364-.215-3.773.988.988-3.774-.215-.364A9.94 9.94 0 0 1 2.054 12C2.054 6.497 6.497 2.054 12 2.054S21.946 6.497 21.946 12 17.503 21.946 12 21.946z"/></svg>`;
@@ -706,9 +725,9 @@ function renderCard(t) {
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       View Full Profile
     </button>
-    <a href="${waLink(t.phone, t.name)}" class="wa-btn" target="_blank" onclick="logContact(${t.id})">
+    <button class="wa-btn" onclick="openWhatsApp('${t.phone}', '${t.name.replace(/'/g,"\\'")}', ${t.id})">
       ${waIcon()} Connect on WhatsApp
-    </a>
+    </button>
   </div>`;
 }
 
@@ -891,10 +910,10 @@ async function openProfile(id) {
 
     <!-- WhatsApp CTA -->
     <div style="padding:18px 18px 0">
-      <a href="${waLink(t.phone, t.name)}" target="_blank" onclick="logContact(${t.id})"
-        style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;border:none;border-radius:12px;padding:14px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;width:100%;box-sizing:border-box">
+      <button onclick="openWhatsApp('${t.phone}', '${t.name.replace(/'/g,"\\'")}', ${t.id})"
+        style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;border:none;border-radius:12px;padding:14px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;box-sizing:border-box">
         ${WA_SVG} Connect on WhatsApp
-      </a>
+      </button>
     </div>
 
     <!-- Reviews -->
