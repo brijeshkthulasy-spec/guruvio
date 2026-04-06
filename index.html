@@ -172,12 +172,12 @@
 
   /* TUTORS */
   .tutors-section { padding:80px 48px; max-width:1300px; margin:0 auto; }
-  .tutors-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px; }
+  .tutors-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px; align-items:stretch; }
   .tutor-card {
     background:var(--card); border:1px solid var(--border);
     border-radius:20px; padding:22px; transition:all 0.3s;
     position:relative; display:none;
-    flex-direction:column;
+    flex-direction:column; height:100%;
   }
   .tutor-card.visible { display:flex; }
   .tutor-card::before {
@@ -187,11 +187,9 @@
   }
   .tutor-card:hover { border-color:rgba(245,166,35,0.3); transform:translateY(-4px); box-shadow:0 20px 48px rgba(0,0,0,0.4); }
   .tutor-card:hover::before { opacity:1; }
-  .card-tags { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; min-height:26px; }
-  .card-footer { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; margin-top:auto; }
-  }
-  .tutor-card:hover { border-color:rgba(245,166,35,0.3); transform:translateY(-4px); box-shadow:0 20px 48px rgba(0,0,0,0.4); }
-  .tutor-card:hover::before { opacity:1; }
+  .card-tags { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+  .card-spacer { flex:1; }
+  .card-footer { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
   .card-top { display:flex; align-items:center; gap:14px; margin-bottom:16px; }
   .avatar {
     width:52px; height:52px; border-radius:14px;
@@ -223,7 +221,6 @@
     background:rgba(255,255,255,0.05); border:1px solid var(--border);
     border-radius:7px; padding:4px 10px; font-size:11px; color:var(--muted);
   }
-  .card-footer { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
   .tutor-meta { font-size:12px; color:var(--muted); }
   .tutor-meta strong { color:var(--light); font-weight:500; }
   .wa-btn {
@@ -292,51 +289,62 @@
   /* ---- MOBILE FIRST ---- */
   @media(max-width:768px) {
     /* Nav */
-    nav { padding:12px 16px; gap:8px; flex-wrap:wrap; }
+    nav { padding:12px 16px; }
     .nav-link { display:none; }
-    .nav-right { gap:7px; flex-wrap:nowrap; }
-    .nav-cta { padding:8px 12px; font-size:12px; white-space:nowrap; }
-    .nav-tutor-login { padding:8px 12px; font-size:12px; white-space:nowrap; }
+    .nav-right { gap:8px; }
+    .nav-cta { padding:9px 14px; font-size:13px; white-space:nowrap; }
+    .nav-tutor-login { padding:9px 14px; font-size:13px; white-space:nowrap; }
 
     /* Hero */
-    .hero { padding:100px 18px 48px; min-height:auto; }
-    .hero h1 { font-size:clamp(32px,9vw,48px); letter-spacing:-1px; }
-    .hero p { font-size:15px; margin-top:16px; }
+    .hero { padding:90px 20px 44px; min-height:auto; }
+    .hero h1 { font-size:clamp(34px,10vw,52px); letter-spacing:-1px; }
+    .hero p { font-size:15px; margin-top:14px; }
+    .hero-actions { flex-direction:column; align-items:stretch; gap:10px; margin-top:28px; }
+    .hero-actions .btn-primary,
+    .hero-actions .btn-outline { width:100%; text-align:center; justify-content:center; padding:15px 20px; font-size:15px; }
 
-    /* Filters */
-    .tutors-section { padding:48px 18px; }
-    .filters-row { gap:8px; }
-    .sf { min-width:0; font-size:13px; padding:10px 12px; }
-    .apply-btn { width:100%; padding:12px; font-size:14px; border-radius:12px; }
+    /* Tutors section */
+    .tutors-section { padding:44px 16px; }
+    .section-title { font-size:clamp(22px,7vw,32px); margin-bottom:20px; }
 
-    /* Tutor cards */
-    .tutors-grid { grid-template-columns:1fr; gap:14px; }
-    .tutor-card { padding:20px; }
+    /* Filters — stack vertically on mobile */
+    .filters-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .filter-pill { width:100%; }
+    .filter-pill select { width:100%; font-size:13px; padding:10px 12px; }
+    .apply-btn { grid-column:1/-1; width:100%; padding:12px; font-size:14px; border-radius:12px; }
+
+    /* Tutor cards — single column */
+    .tutors-grid { grid-template-columns:1fr; gap:12px; }
+    .tutor-card { padding:18px; }
     .tutor-name { font-size:15px; }
+    .card-top { margin-bottom:12px; }
 
     /* How it works */
-    .how-section { padding:56px 18px; }
-    .steps { grid-template-columns:1fr; gap:14px; }
-    .step { padding:22px 18px; }
-    .step-num { font-size:36px; }
+    .how-section { padding:48px 16px; }
+    .steps { grid-template-columns:1fr; gap:12px; }
+    .step { padding:20px 16px; }
+    .step-num { font-size:34px; }
 
     /* Why section */
-    .why-section { padding:56px 18px; }
-    .why-grid { grid-template-columns:1fr; gap:12px; }
-    .why-card { padding:20px; }
+    .why-section { padding:48px 16px; }
+    .why-grid { grid-template-columns:1fr; gap:10px; }
+    .why-card { padding:18px; }
 
     /* Footer */
-    footer { padding:28px 18px; flex-direction:column; align-items:center; text-align:center; gap:12px; }
-    .footer-links { gap:16px; flex-wrap:wrap; justify-content:center; }
+    footer { padding:28px 16px; flex-direction:column; align-items:center; text-align:center; gap:10px; }
+    .footer-links { gap:14px; flex-wrap:wrap; justify-content:center; }
 
-    /* Section titles */
-    .section-title { font-size:clamp(24px,6vw,32px); margin-bottom:28px; }
+    /* Profile modal */
+    #profile-overlay { padding:0; align-items:flex-end; }
+    #profile-sheet { border-radius:20px 20px 0 0; max-height:92vh; max-width:100%; }
   }
 
-  @media(max-width:380px) {
-    .nav-cta { padding:7px 9px; font-size:11px; }
-    .nav-tutor-login { padding:7px 9px; font-size:11px; }
-    .logo { font-size:20px; }
+  @media(max-width:480px) {
+    /* Filters — full width each on very small screens */
+    .filters-row { grid-template-columns:1fr; }
+    .nav-cta { font-size:12px; padding:8px 11px; }
+    .nav-tutor-login { font-size:12px; padding:8px 11px; }
+    .logo { font-size:22px; }
   }
 </style>
 </head>
@@ -571,6 +579,7 @@ function renderCard(t) {
     '<div class="card-tags">' + areaHtml + '</div>' +
     '<div class="card-tags">' + subjectHtml + '</div>' +
     '<div class="card-tags">' + syllabusHtml + '</div>' +
+    '<div class="card-spacer"></div>' +
     '<div class="card-footer"><div class="tutor-meta">&#127968; Home &amp; Online</div></div>' +
     '<button type="button" class="wa-btn" onclick="openWhatsApp(' + t.id + ')">' + waIconSvg + ' Connect on WhatsApp</button>' +
     '</div>';
