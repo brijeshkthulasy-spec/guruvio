@@ -1084,39 +1084,6 @@ function openEditTutor(id) {
 
 function closeModal() { document.getElementById('tutor-modal').classList.remove('open'); }
 
-async function saveTutor() {
-  const id  = document.getElementById('m-id').value;
-  const name = document.getElementById('m-name').value.trim();
-  const phone = document.getElementById('m-phone').value.trim();
-  const area = document.getElementById('m-area').value;
-  if (!name||!phone||!area) { alert('Name, phone and area are required.'); return; }
-  const expVal = document.getElementById('m-exp').value;
-  const row = {
-    name, phone, area,
-    age: parseInt(document.getElementById('m-age').value)||null,
-    exp: expVal ? expVal+' years' : null,
-    rating: parseFloat(document.getElementById('m-rating').value)||0,
-    qual: document.getElementById('m-qual').value,
-    edu: document.getElementById('m-edu').value,
-    bio: document.getElementById('m-bio').value,
-    photo_url: adminPhotoUrl || null,
-    av_class: document.getElementById('m-avclass').value,
-    verified: document.getElementById('m-verified').value === 'true',
-    top_rated: document.getElementById('m-toprated').value === 'true',
-    active: document.getElementById('m-active').value === 'true',
-    subjects: [...document.querySelectorAll('[id^=ms]:checked')].map(c=>c.value),
-    classes:  [...document.querySelectorAll('[id^=mc]:checked')].map(c=>c.value)
-  };
-  if (id) {
-    await sbPatch('tutors', id, row);
-  } else {
-    await sbPost('tutors', row);
-  }
-  closeModal();
-  toast('Tutor saved!');
-  loadTutorsPage();
-}
-
 async function deleteTutor(id) {
   if (!confirm('Delete this tutor?')) return;
   await sbDelete('tutors', id);
