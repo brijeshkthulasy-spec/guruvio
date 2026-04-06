@@ -801,6 +801,46 @@ async function loadTutorsPage() {
 function getTutors() { return _tutors; }
 function saveTutors(t) { _tutors = t; }
 
+async function saveTutor() {
+  const id    = document.getElementById('m-id').value;
+  const name  = document.getElementById('m-name').value.trim();
+  const phone = document.getElementById('m-phone').value.trim();
+  if (!name || !phone) { alert('Name and phone are required.'); return; }
+
+  const areas    = [...document.querySelectorAll('[id^=ma]:checked')].map(c=>c.value);
+  const subjects = [...document.querySelectorAll('[id^=ms]:checked')].map(c=>c.value);
+  const classes  = [...document.querySelectorAll('[id^=mc]:checked')].map(c=>c.value);
+  const syllabus = [...document.querySelectorAll('[id^=msy]:checked')].map(c=>c.value);
+  const expVal   = document.getElementById('m-exp').value;
+
+  const row = {
+    name, phone,
+    age:       parseInt(document.getElementById('m-age').value) || null,
+    exp:       expVal ? expVal + ' years' : null,
+    rating:    parseFloat(document.getElementById('m-rating').value) || 0,
+    area:      areas[0] || '',
+    areas:     areas,
+    qual:      document.getElementById('m-qual').value,
+    edu:       document.getElementById('m-edu').value,
+    bio:       document.getElementById('m-bio').value,
+    photo_url: adminPhotoUrl || null,
+    av_class:  document.getElementById('m-avclass').value,
+    verified:  document.getElementById('m-verified').value === 'true',
+    top_rated: document.getElementById('m-toprated').value === 'true',
+    active:    document.getElementById('m-active').value === 'true',
+    subjects, classes, syllabus
+  };
+
+  if (id) {
+    await sbPatch('tutors', id, row);
+  } else {
+    await sbPost('tutors', row);
+  }
+  closeModal();
+  toast('Tutor saved successfully!');
+  loadTutorsPage();
+}
+
 function renderTutorTable(filter) {
   let tutors = _tutors;
   if (filter) tutors = tutors.filter(t =>
@@ -991,15 +1031,15 @@ function handleAdminPhoto(input) {
 
 function resetAdminModal() {
   adminPhotoUrl = null;
-  document.getElementById('m-photo-preview').innerHTML = '?';
+  const prev = document.getElementById('m-photo-preview');
+  if (prev) prev.innerHTML = '?';
   const fields = ['m-name','m-phone','m-age','m-exp','m-rating','m-qual','m-edu','m-bio'];
   fields.forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-  document.getElementById('m-id').value = '';
-  document.getElementById('m-area').value = '';
-  document.getElementById('m-avclass').value = 'av1';
-  document.getElementById('m-verified').value = 'true';
-  document.getElementById('m-toprated').value = 'false';
-  document.getElementById('m-active').value = 'true';
+  const mid = document.getElementById('m-id'); if(mid) mid.value='';
+  const mac = document.getElementById('m-avclass'); if(mac) mac.value='av1';
+  const mv  = document.getElementById('m-verified'); if(mv) mv.value='true';
+  const mtr = document.getElementById('m-toprated'); if(mtr) mtr.value='false';
+  const mat = document.getElementById('m-active'); if(mat) mat.value='true';
   document.querySelectorAll('[id^=ma]').forEach(c=>c.checked=false);
   document.querySelectorAll('[id^=ms]').forEach(c=>c.checked=false);
   document.querySelectorAll('[id^=mc]').forEach(c=>c.checked=false);
@@ -1023,7 +1063,6 @@ function openEditTutor(id) {
   document.getElementById('m-age').value = t.age || '';
   document.getElementById('m-exp').value = (t.exp||'').replace(' years','');
   document.getElementById('m-rating').value = t.rating || '';
-  document.getElementById('m-area').value = t.area || '';
   document.getElementById('m-qual').value = t.qual || '';
   document.getElementById('m-edu').value = t.edu || '';
   document.getElementById('m-bio').value = t.bio || '';
@@ -1031,8 +1070,11 @@ function openEditTutor(id) {
   document.getElementById('m-verified').value = String(t.verified);
   document.getElementById('m-toprated').value = String(t.top_rated);
   document.getElementById('m-active').value = String(t.active);
-  document.querySelectorAll('[id^=ms]').forEach(c => { c.checked = (t.subjects||[]).includes(c.value); });
-  document.querySelectorAll('[id^=mc]').forEach(c => { c.checked = (t.classes||[]).includes(c.value); });
+  var tAreas = t.areas || (t.area ? [t.area] : []);
+  document.querySelectorAll('[id^=ma]').forEach(cb => { cb.checked = tAreas.includes(cb.value); });
+  document.querySelectorAll('[id^=ms]').forEach(cb => { cb.checked = (t.subjects||[]).includes(cb.value); });
+  document.querySelectorAll('[id^=mc]').forEach(cb => { cb.checked = (t.classes||[]).includes(cb.value); });
+  document.querySelectorAll('[id^=msy]').forEach(cb => { cb.checked = (t.syllabus||[]).includes(cb.value); });
   if (t.photo_url) {
     adminPhotoUrl = t.photo_url;
     document.getElementById('m-photo-preview').innerHTML = '<img src="' + t.photo_url + '" style="width:100%;height:100%;object-fit:cover;">';
