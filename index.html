@@ -603,21 +603,32 @@ function renderTutors(list) {
 function onFilterChange(pillId, sel) {
   var pill = document.getElementById(pillId);
   if (sel.value) pill.classList.add('active'); else pill.classList.remove('active');
+  filterTutors();
 }
 function clearFilter(selectId, pillId) {
   document.getElementById(selectId).value = '';
   document.getElementById(pillId).classList.remove('active');
   filterTutors();
 }
+var SYLLABUS_VALUES = ['CBSE','ICSE','IGCSE','State Syllabus'];
 function filterTutors() {
   var subj = document.getElementById('filter-subject').value;
   var area = document.getElementById('filter-area').value;
   var cls  = document.getElementById('filter-class').value;
   var filtered = _tutors.filter(function(t) {
     if (!t.active) return false;
-    if (subj && (t.subjects||[]).indexOf(subj) === -1) return false;
-    if (area && t.area !== area) return false;
-    if (cls  && (t.classes||[]).indexOf(cls) === -1) return false;
+    // Subject filter — exclude syllabus values from subjects array
+    if (subj) {
+      var cleanSubjects = (t.subjects||[]).filter(function(s){ return SYLLABUS_VALUES.indexOf(s) === -1; });
+      if (cleanSubjects.indexOf(subj) === -1) return false;
+    }
+    // Area filter — check against areas array (multi-area tutors)
+    if (area) {
+      var tutorAreas = (t.areas && t.areas.length) ? t.areas : (t.area ? [t.area] : []);
+      if (tutorAreas.indexOf(area) === -1) return false;
+    }
+    // Class filter
+    if (cls && (t.classes||[]).indexOf(cls) === -1) return false;
     return true;
   });
   renderTutors(filtered);
