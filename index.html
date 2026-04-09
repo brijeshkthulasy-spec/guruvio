@@ -190,19 +190,22 @@
   .card-tags { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
   .card-spacer { flex:1; }
   .card-footer { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-  .more-areas-tip { display:inline-block; }
-  .areas-tooltip {
-    display:none; position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%);
-    background:#1e1e35; border:1px solid rgba(245,166,35,0.3); border-radius:10px;
-    padding:8px 12px; font-size:12px; color:#f5a623; white-space:nowrap;
-    z-index:999; pointer-events:none;
-    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  .more-areas-tip {
+    font-size:11px; color:var(--accent); cursor:pointer;
+    padding:3px 9px; border:1px solid rgba(245,166,35,0.3);
+    border-radius:6px; background:rgba(245,166,35,0.06);
+    user-select:none; -webkit-tap-highlight-color:transparent;
   }
-  .areas-tooltip::after {
-    content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%);
-    border:5px solid transparent; border-top-color:#1e1e35;
+  .more-areas-tip:hover { background:rgba(245,166,35,0.15); }
+  #areas-tooltip-box {
+    position:fixed; z-index:99999;
+    background:#1e1e35; border:1px solid rgba(245,166,35,0.4);
+    border-radius:10px; padding:10px 14px;
+    font-size:12px; color:#f5a623;
+    box-shadow:0 8px 28px rgba(0,0,0,0.5);
+    pointer-events:none; max-width:220px;
+    line-height:1.7;
   }
-  .more-areas-tip:hover .areas-tooltip { display:block; }
   .card-top { display:flex; align-items:center; gap:14px; margin-bottom:16px; }
   .avatar {
     width:52px; height:52px; border-radius:14px;
@@ -472,6 +475,7 @@
 </section>
 
 <!-- PROFILE MODAL -->
+<div id="areas-tooltip-box" style="display:none"></div>
 <div id="profile-overlay" onclick="closeProfileBtn()" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:16px">
   <div id="profile-sheet" onclick="event.stopPropagation()" style="background:#12121f;border:1px solid rgba(255,255,255,0.09);border-radius:20px;width:100%;max-width:440px;max-height:88vh;overflow-y:auto;position:relative">
   </div>
@@ -585,10 +589,12 @@ function renderCard(t) {
     return '<span style="background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.3);border-radius:6px;padding:3px 9px;font-size:11px;color:#f5a623">&#128205; ' + a + '</span>';
   }).join('');
   if (areas.length > 3) {
-    var remaining = areas.slice(3).join(', ');
-    areaHtml += '<span class="more-areas-tip" style="font-size:11px;color:var(--accent);cursor:pointer;position:relative;padding:3px 7px;border:1px solid rgba(245,166,35,0.3);border-radius:6px;background:rgba(245,166,35,0.06)">' +
+    var remaining = areas.slice(3).map(function(a){ return '📍 ' + a; }).join('\n');
+    areaHtml += '<span class="more-areas-tip" ' +
+      'onmouseenter="showAreasTip(event,\'' + areas.slice(3).join(',') + '\')" ' +
+      'onmouseleave="hideAreasTip()" ' +
+      'onclick="showAreasTip(event,\'' + areas.slice(3).join(',') + '\')">' +
       '+' + (areas.length - 3) + ' more' +
-      '<span class="areas-tooltip">' + remaining + '</span>' +
     '</span>';
   }
   var syllabusValues = ['CBSE','ICSE','IGCSE','State Syllabus'];
@@ -618,6 +624,37 @@ function renderTutors(list) {
   grid.innerHTML = visible.map(renderCard).join('') + noRes.outerHTML;
   document.getElementById('no-results').style.display = 'none';
 }
+
+// ============================================================
+// AREAS TOOLTIP
+// ============================================================
+var _tipTimeout = null;
+function showAreasTip(e, areasStr) {
+  clearTimeout(_tipTimeout);
+  var areas = areasStr.split(',');
+  var box = document.getElementById('areas-tooltip-box');
+  box.innerHTML = areas.map(function(a){ return '📍 ' + a.trim(); }).join('<br>');
+  box.style.display = 'block';
+  // Position above the element
+  var rect = e.target.getBoundingClientRect();
+  var boxW = 200;
+  var left = rect.left + (rect.width/2) - (boxW/2);
+  if (left < 8) left = 8;
+  if (left + boxW > window.innerWidth - 8) left = window.innerWidth - boxW - 8;
+  box.style.left  = left + 'px';
+  box.style.top   = (rect.top - 8 + window.scrollY) + 'px';
+  box.style.transform = 'translateY(-100%)';
+  box.style.width = boxW + 'px';
+  e.stopPropagation();
+}
+function hideAreasTip() {
+  _tipTimeout = setTimeout(function(){
+    document.getElementById('areas-tooltip-box').style.display = 'none';
+  }, 200);
+}
+document.addEventListener('click', function(e){
+  if (!e.target.classList.contains('more-areas-tip')) hideAreasTip();
+});
 
 // ============================================================
 // FILTERS
