@@ -523,10 +523,24 @@ const SH = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Content
 
 async function sbGetTutor(phone) {
   const clean = String(phone).replace(/\D/g,'').replace(/^0/,'');
-  const p = clean.length === 10 ? '91'+clean : clean;
-  const r = await fetch(`${SUPA_URL}/rest/v1/tutors?phone=eq.${p}`, { headers: SH });
+  const with91   = clean.length === 10 ? '91' + clean : clean;
+  const without91 = with91.startsWith('91') && with91.length === 12 ? with91.slice(2) : with91;
+
+  // Try all possible formats stored in Supabase
+  const formats = [with91, without91, '0' + without91, '+91' + without91, '+' + with91];
+  const query = formats.map(f => `phone=eq.${encodeURIComponent(f)}`).join('&');
+  const r = await fetch(`${SUPA_URL}/rest/v1/tutors?or=(${formats.map(f=>'phone.eq.' + encodeURIComponent(f)).join(',')})&limit=1`, { headers: SH });
   const data = await r.json();
-  return data.length ? data[0] : null;
+  if (data && data.length) return data[0];
+
+  // Fallback: fetch all and match manually
+  const r2 = await fetch(`${SUPA_URL}/rest/v1/tutors?select=*`, { headers: SH });
+  const all = await r2.json();
+  return all.find(t => {
+    const tp = String(t.phone || '').replace(/\D/g,'').replace(/^0/,'');
+    const tp91 = tp.length === 10 ? '91' + tp : tp;
+    return tp91 === with91;
+  }) || null;
 }
 
 async function sbUpdateTutor(id, row) {
@@ -562,7 +576,7 @@ async function doLogin() {
   const phone = document.getElementById('login-phone').value.trim();
   const pass  = document.getElementById('login-pass').value;
   const raw = await sbGetTutor(phone);
-  if (!raw) { showErr('No tutor found with this WhatsApp number.'); return; }
+  if (!raw) { showErr('No tutor found with this number. Try entering just your 10-digit mobile number (e.g. 9847123456).'); return; }
   const tutor = {
     id: raw.id, name: raw.name, phone: raw.phone, area: raw.area,
     subjects: raw.subjects || [], classes: raw.classes || [],
