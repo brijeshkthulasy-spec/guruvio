@@ -899,7 +899,7 @@ async function saveTutor() {
   if (!name || !phone) { alert('Name and phone are required.'); return; }
 
   const areas    = [...document.querySelectorAll('[id^=ma]:checked')].map(c=>c.value);
-  const subjects = [...document.querySelectorAll('[id^=ms]:checked')].map(c=>c.value);
+  const subjects = [...document.querySelectorAll('[id^=ms]:not([id^=msy]):checked')].map(c=>c.value);
   const classes  = [...document.querySelectorAll('[id^=mc]:checked')].map(c=>c.value);
   const syllabus = [...document.querySelectorAll('[id^=msy]:checked')].map(c=>c.value);
   const expVal   = document.getElementById('m-exp').value;
@@ -991,11 +991,15 @@ async function approveReg(id) {
   const ok1 = await sbPatch('registrations', id, { status: 'approved' });
   if (!ok1) { toast('Failed to update registration.'); return; }
   const ok2 = await sbPost('tutors', {
-    name: reg.name, phone: reg.phone, area: reg.area,
+    name: reg.name, phone: reg.phone,
+    area: reg.area || (reg.areas && reg.areas[0]) || '',
+    areas: reg.areas || (reg.area ? [reg.area] : []),
     exp: reg.exp || null, age: reg.age || null,
     qual: reg.qual || null, edu: reg.edu || null,
     bio: reg.bio || null, photo_url: reg.photo_url || null,
-    subjects: reg.subjects || [], classes: reg.classes || [],
+    subjects: reg.subjects || [],
+    classes: reg.classes || [],
+    syllabus: reg.syllabus || [],
     av_class: reg.av_class || 'av1',
     verified: false, top_rated: false, active: true, rating: 0,
     password: reg.password || String(reg.phone).replace(/\D/g,'').slice(-4)
@@ -1108,7 +1112,7 @@ function resetAdminModal() {
   const mtr = document.getElementById('m-toprated'); if(mtr) mtr.value='false';
   const mat = document.getElementById('m-active'); if(mat) mat.value='true';
   document.querySelectorAll('[id^=ma]').forEach(c=>c.checked=false);
-  document.querySelectorAll('[id^=ms]').forEach(c=>c.checked=false);
+  document.querySelectorAll('[id^=ms]:not([id^=msy])').forEach(c=>c.checked=false);
   document.querySelectorAll('[id^=mc]').forEach(c=>c.checked=false);
   document.querySelectorAll('[id^=msy]').forEach(c=>c.checked=false);
 }
@@ -1139,7 +1143,7 @@ function openEditTutor(id) {
   document.getElementById('m-active').value = String(t.active);
   var tAreas = t.areas || (t.area ? [t.area] : []);
   document.querySelectorAll('[id^=ma]').forEach(cb => { cb.checked = tAreas.includes(cb.value); });
-  document.querySelectorAll('[id^=ms]').forEach(cb => { cb.checked = (t.subjects||[]).includes(cb.value); });
+  document.querySelectorAll('[id^=ms]:not([id^=msy])').forEach(cb => { cb.checked = (t.subjects||[]).includes(cb.value); });
   document.querySelectorAll('[id^=mc]').forEach(cb => { cb.checked = (t.classes||[]).includes(cb.value); });
   document.querySelectorAll('[id^=msy]').forEach(cb => { cb.checked = (t.syllabus||[]).includes(cb.value); });
   if (t.photo_url) {
