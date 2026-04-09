@@ -172,6 +172,8 @@
           <div class="cb-item"><input type="checkbox" id="s8" value="Social Science"><label for="s8">Social Science</label></div>
           <div class="cb-item"><input type="checkbox" id="s9" value="Computer Science"><label for="s9">Computer Science</label></div>
           <div class="cb-item"><input type="checkbox" id="s10" value="Accountancy"><label for="s10">Accountancy</label></div>
+          <div class="cb-item"><input type="checkbox" id="s11" value="Economics"><label for="s11">Economics</label></div>
+          <div class="cb-item"><input type="checkbox" id="s12" value="Geography"><label for="s12">Geography</label></div>
         </div>
       </div>
       <div class="field" style="margin-top:18px">
@@ -276,7 +278,7 @@ async function submitRegistration() {
   const password = document.getElementById('r-password').value;
   const confirmPw = document.getElementById('r-confirm-password').value;
   const areas    = [...document.querySelectorAll('[id^=a]:checked')].map(c=>c.value);
-  const subjects = [...document.querySelectorAll('[id^=s]:checked')].map(c=>c.value);
+  const subjects = [...document.querySelectorAll('[id^=s]:not([id^=sl]):checked')].map(c=>c.value);
   const classes  = [...document.querySelectorAll('[id^=c]:checked')].map(c=>c.value);
   const syllabus = [...document.querySelectorAll('[id^=sl]:checked')].map(c=>c.value);
 

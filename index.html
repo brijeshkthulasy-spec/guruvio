@@ -400,6 +400,8 @@
         <option>Social Science</option>
         <option>Computer Science</option>
         <option>Accountancy</option>
+        <option>Economics</option>
+        <option>Geography</option>
       </select>
       <button class="filter-clear" onclick="clearFilter('filter-subject','pill-subject')">×</button>
     </div>
@@ -598,7 +600,7 @@ function renderCard(t) {
     '</span>';
   }
   var syllabusValues = ['CBSE','ICSE','IGCSE','State Syllabus'];
-  var subjectHtml = (t.subjects||[]).filter(function(s){ return syllabusValues.indexOf(s) === -1; }).map(function(s){ return '<span class="stag">' + s + '</span>'; }).join('');
+  var subjectHtml = (t.subjects||[]).filter(function(s){ return syllabusValues.indexOf(s) === -1; }).map(function(s){ return '<span style="background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.25);border-radius:6px;padding:3px 9px;font-size:11px;color:#38bdf8">' + s + '</span>'; }).join('');
   var classHtml   = (t.classes||[]).map(function(c){ return '<span style="background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.2);border-radius:6px;padding:3px 9px;font-size:11px;color:#00c9a7">' + c + '</span>'; }).join('');
   var syllabusHtml= (t.syllabus||[]).map(function(sy){ return '<span style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:6px;padding:3px 9px;font-size:11px;color:#818cf8">' + sy + '</span>'; }).join('');
 
