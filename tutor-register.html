@@ -219,8 +219,8 @@
         </div>
       </div>
       <div class="field">
-        <label>About You</label>
-        <textarea id="r-bio" placeholder="Tell parents a bit about your teaching style, experience and what makes you a great tutor..."></textarea>
+        <label>About You *</label>
+        <textarea id="r-bio" required placeholder="Tell parents a bit about your teaching style, experience and what makes you a great tutor..."></textarea>
       </div>
     </div>
 
@@ -285,8 +285,9 @@ async function submitRegistration() {
   const classes  = [...document.querySelectorAll('[id^=c]:checked')].map(c=>c.value);
   const syllabus = [...document.querySelectorAll('[id^=sl]:checked')].map(c=>c.value);
 
-  if (!name||!phone||!areas.length||!exp||!qual||!subjects.length||!classes.length||!syllabus.length) {
-    alert('Please fill all required fields and select at least one area, subject, class and syllabus.'); return;
+  const bio = document.getElementById('r-bio').value.trim();
+  if (!name||!phone||!areas.length||!exp||!qual||!bio||!subjects.length||!classes.length||!syllabus.length) {
+    alert('Please fill all required fields. About You is mandatory — parents read this to decide!'); return;
   }
   if (password && password.length < 6) {
     alert('Password must be at least 6 characters.'); return;
@@ -304,7 +305,7 @@ async function submitRegistration() {
     areas: areas, area: areas[0] || '', exp: exp+' years', qual,
     age: age ? parseInt(age) : null,
     edu: document.getElementById('r-edu').value || null,
-    bio: document.getElementById('r-bio').value || null,
+    bio: bio || null,
     photo_url: uploadedPhotoUrl || null,
     subjects, classes, syllabus,
     av_class: ['av1','av2','av3','av4','av5','av6','av7','av8'][Math.floor(Math.random()*8)],

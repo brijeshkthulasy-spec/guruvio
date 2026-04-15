@@ -239,7 +239,16 @@
   }
   .tutor-meta { font-size:12px; color:var(--muted); }
   .tutor-meta strong { color:var(--light); font-weight:500; }
-  .wa-btn {
+  .view-profile-btn {
+    display:flex; align-items:center; justify-content:center; gap:7px;
+    background:transparent; color:var(--light); border:1px solid var(--border);
+    border-radius:14px; padding:11px 20px; font-size:14px; font-weight:500;
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:all 0.2s; width:100%; margin-bottom:10px;
+    -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+  }
+  .view-profile-btn:hover { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.2); }
+  .view-profile-btn:active { transform:scale(0.98); }
     display:flex; align-items:center; justify-content:center; gap:8px;
     background:#25d366; color:#fff; border:none; border-radius:14px;
     padding:16px 20px; font-size:15px; font-weight:600;
@@ -616,6 +625,10 @@ function renderCard(t) {
     '<div class="card-tags">' + syllabusHtml + '</div>' +
     '<div class="card-spacer"></div>' +
     '<div class="card-footer"><div class="tutor-meta">&#127968; Home &amp; Online</div></div>' +
+    '<button type="button" class="view-profile-btn" onclick="openProfile(' + t.id + ')">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+      ' View Full Profile' +
+    '</button>' +
     '<button type="button" class="wa-btn" onclick="openWhatsApp(' + t.id + ')">' + waIconSvg + ' Connect on WhatsApp</button>' +
     '</div>';
 }
@@ -754,20 +767,11 @@ function openProfile(tutorId) {
     (subjHtml  ? '<div style="padding:0 18px 14px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:10px">SUBJECTS</div><div>' + subjHtml  + '</div></div>' : '') +
     (classHtml ? '<div style="padding:0 18px 14px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:10px">CLASSES</div><div>' + classHtml + '</div></div>' : '') +
     (syllabusHtml ? '<div style="padding:0 18px 14px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:10px">SYLLABUS</div><div>' + syllabusHtml + '</div></div>' : '') +
-    (t.bio     ? '<div style="padding:0 18px 14px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:10px">ABOUT</div><p style="font-size:13px;color:#9090a8;line-height:1.7;margin:0">' + t.bio + '</p></div>' : '') +
-    '<div style="padding:0 18px 18px">' +
-      '<button type="button" onclick="openWhatsApp(' + t.id + ')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;border:none;border-radius:12px;padding:14px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;width:100%;box-sizing:border-box">' +
-        waIconSvg + ' Connect on WhatsApp' +
-      '</button>' +
-    '</div>' +
-    '<div style="padding:0 18px 24px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:12px">REVIEWS</div><div id="reviews-slot">Loading...</div></div>';
+    (t.bio ? '<div style="padding:0 18px 24px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:10px">ABOUT</div><p style="font-size:13px;color:#9090a8;line-height:1.7;margin:0">' + t.bio + '</p></div>' : '');
 
   document.getElementById('profile-sheet').innerHTML = html;
   document.getElementById('profile-overlay').style.display = 'flex';
   document.body.style.overflow = 'hidden';
-
-  // Load reviews after modal is shown
-  loadReviews(t.id);
 }
 
 function closeProfileBtn() {
