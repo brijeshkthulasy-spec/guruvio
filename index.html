@@ -249,16 +249,17 @@
   }
   .view-profile-btn:hover { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.2); }
   .view-profile-btn:active { transform:scale(0.98); }
+  .wa-btn {
     display:flex; align-items:center; justify-content:center; gap:8px;
-    background:#25d366; color:#fff; border:none; border-radius:14px;
-    padding:16px 20px; font-size:15px; font-weight:600;
+    background:#25d366; color:#fff; border:none; border-radius:100px;
+    padding:14px 20px; font-size:14px; font-weight:600;
     cursor:pointer; font-family:'DM Sans',sans-serif;
     transition:all 0.2s; text-decoration:none; width:100%;
-    min-height:52px; -webkit-tap-highlight-color:transparent;
+    min-height:48px; -webkit-tap-highlight-color:transparent;
     touch-action:manipulation;
   }
-  .wa-btn:hover { background:#1fc557; }
-  .wa-btn:active { background:#19a84a; transform:scale(0.98); }
+  .wa-btn:hover { background:#1fc557; transform:translateY(-1px); box-shadow:0 8px 24px rgba(37,211,102,0.25); }
+  .wa-btn:active { transform:scale(0.98); }
   .wa-icon { width:17px; height:17px; fill:#fff; flex-shrink:0; }
   .no-results {
     display:none; text-align:center; padding:60px 24px;
@@ -359,9 +360,16 @@
     footer { padding:28px 16px; flex-direction:column; align-items:center; text-align:center; gap:10px; }
     .footer-links { gap:14px; flex-wrap:wrap; justify-content:center; }
 
-    /* Profile modal */
+    /* Profile modal — slide up from bottom on mobile */
     #profile-overlay { padding:0; align-items:flex-end; }
-    #profile-sheet { border-radius:20px 20px 0 0; max-height:92vh; max-width:100%; }
+    #profile-sheet { border-radius:20px 20px 0 0; max-height:92vh; max-width:100%; overflow-y:auto; }
+    .popup-grid { grid-template-columns:1fr !important; }
+  }
+
+  @media(min-width:769px) {
+    /* Profile modal — no scroll on desktop */
+    #profile-sheet { max-height:none; overflow-y:visible; }
+    .popup-grid { grid-template-columns:160px 1fr !important; }
   }
 
   @media(max-width:480px) {
@@ -490,7 +498,7 @@
 <!-- PROFILE MODAL -->
 <div id="areas-tooltip-box" style="display:none"></div>
 <div id="profile-overlay" onclick="closeProfileBtn()" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:16px">
-  <div id="profile-sheet" onclick="event.stopPropagation()" style="background:#12121f;border:1px solid rgba(255,255,255,0.09);border-radius:20px;width:100%;max-width:440px;max-height:88vh;overflow-y:auto;position:relative">
+  <div id="profile-sheet" onclick="event.stopPropagation()" style="background:#12121f;border:1px solid rgba(255,255,255,0.09);border-radius:20px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;position:relative">
   </div>
 </div>
 
@@ -742,32 +750,46 @@ function openProfile(tutorId) {
   if (t.edu)  rows += '<div style="display:flex;gap:10px;margin-bottom:10px"><span style="width:22px;text-align:center">&#127979;</span><div><div style="font-size:13px;font-weight:500;color:#f7f4ee">' + t.edu + '</div><div style="font-size:11px;color:#9090a8">College</div></div></div>';
   if (t.exp)  rows += '<div style="display:flex;gap:10px;margin-bottom:10px"><span style="width:22px;text-align:center">&#9203;</span><div><div style="font-size:13px;font-weight:500;color:#f7f4ee">' + t.exp + '</div><div style="font-size:11px;color:#9090a8">Experience</div></div></div>';
 
-  var subjHtml  = (t.subjects||[]).map(function(s){ return '<span style="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.25);border-radius:8px;padding:5px 11px;font-size:12px;color:#f5a623;margin:3px;display:inline-block">' + s + '</span>'; }).join('');
-  var classHtml = (t.classes||[]).map(function(c){ return '<span style="background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.2);border-radius:8px;padding:5px 11px;font-size:12px;color:#00c9a7;margin:3px;display:inline-block">' + c + '</span>'; }).join('');
-  var syllabusHtml = (t.syllabus||[]).map(function(sy){ return '<span style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:8px;padding:5px 11px;font-size:12px;color:#818cf8;margin:3px;display:inline-block">' + sy + '</span>'; }).join('');
+  var areasPillHtml = profileAreas.map(function(a){ return '<span style="background:rgba(245,166,35,0.12);border:1px solid rgba(245,166,35,0.3);border-radius:6px;padding:4px 10px;font-size:12px;color:#f5a623;margin:3px;display:inline-block">&#128205; ' + a + '</span>'; }).join('');
+  var subjHtml  = (t.subjects||[]).filter(function(s){ return ['CBSE','ICSE','IGCSE','State Syllabus'].indexOf(s)===-1; }).map(function(s){ return '<span style="background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.25);border-radius:8px;padding:4px 10px;font-size:12px;color:#38bdf8;margin:3px;display:inline-block">' + s + '</span>'; }).join('');
+  var classHtml = (t.classes||[]).map(function(c){ return '<span style="background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.2);border-radius:8px;padding:4px 10px;font-size:12px;color:#00c9a7;margin:3px;display:inline-block">' + c + '</span>'; }).join('');
+  var syllabusHtml = (t.syllabus||[]).map(function(sy){ return '<span style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:8px;padding:4px 10px;font-size:12px;color:#818cf8;margin:3px;display:inline-block">' + sy + '</span>'; }).join('');
 
-  var waIconSvg = '<svg style="width:18px;height:18px;fill:#fff;flex-shrink:0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.549 4.122 1.512 5.862L.057 23.428a.5.5 0 0 0 .614.614l5.566-1.455A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.946a9.94 9.94 0 0 1-5.073-1.39l-.364-.215-3.773.988.988-3.774-.215-.364A9.94 9.94 0 0 1 2.054 12C2.054 6.497 6.497 2.054 12 2.054S21.946 6.497 21.946 12 17.503 21.946 12 21.946z"/></svg>';
+  var section = function(label, content) {
+    return content ? '<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:8px">' + label + '</div><div>' + content + '</div></div>' : '';
+  };
+
+  var infoHtml =
+    '<div style="font-size:12px;color:#9090a8;line-height:1.9">' +
+    (t.exp  ? '<div>&#9203; <span style="color:#f7f4ee">' + t.exp + '</span></div>' : '') +
+    (t.qual ? '<div>&#127891; <span style="color:#f7f4ee">' + t.qual + '</span></div>' : '') +
+    (t.edu  ? '<div>&#127979; <span style="color:#f7f4ee">' + t.edu  + '</span></div>' : '') +
+    '<div>&#127968; <span style="color:#f7f4ee">Home visits &middot; Online</span></div>' +
+    '</div>';
 
   var html =
-    '<div style="position:sticky;top:0;z-index:10;background:#12121f;border-bottom:1px solid rgba(255,255,255,0.07);border-radius:20px 20px 0 0;padding:14px 18px;display:flex;align-items:center;justify-content:space-between">' +
+    // Header
+    '<div style="position:sticky;top:0;z-index:10;background:#12121f;border-bottom:1px solid rgba(255,255,255,0.07);border-radius:20px 20px 0 0;padding:13px 18px;display:flex;align-items:center;justify-content:space-between">' +
       '<span style="font-size:15px;font-weight:600;color:#f7f4ee">' + t.name + '</span>' +
-      '<button onclick="closeProfileBtn()" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;cursor:pointer;color:#fff;font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center">&#215;</button>' +
+      '<button onclick="closeProfileBtn()" style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;cursor:pointer;color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0">&#215;</button>' +
     '</div>' +
-    '<div style="padding:18px;display:flex;gap:14px;align-items:center;border-bottom:1px solid rgba(255,255,255,0.06)">' +
-      '<div style="width:68px;height:68px;border-radius:16px;flex-shrink:0;' + avStyle + ';display:flex;align-items:center;justify-content:center;overflow:hidden">' + photoHtml + '</div>' +
+    // Two-column body on desktop, single on mobile
+    '<div style="padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:16px" class="popup-grid">' +
+      // Left column — photo + info
       '<div>' +
-        '<div style="font-size:13px;color:#9090a8;margin-bottom:8px">' + (t.subjects||[]).slice(0,2).join(' &middot; ') + '</div>' +
-        (t.active ? '<span style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:100px;padding:3px 9px;font-size:11px;color:#818cf8">&#9679; Active</span>' : '') +
+        '<div style="width:100%;aspect-ratio:1;border-radius:14px;' + avStyle + ';display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:12px;max-height:140px">' + photoHtml + '</div>' +
+        infoHtml +
+      '</div>' +
+      // Right column — tags
+      '<div>' +
+        section('Areas', areasPillHtml) +
+        section('Subjects', subjHtml) +
+        section('Classes', classHtml) +
+        section('Syllabus', syllabusHtml) +
       '</div>' +
     '</div>' +
-    '<div style="padding:16px 18px">' +
-      '<div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:12px">PROFILE DETAILS</div>' +
-      rows +
-    '</div>' +
-    (subjHtml  ? '<div style="padding:0 18px 14px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:10px">SUBJECTS</div><div>' + subjHtml  + '</div></div>' : '') +
-    (classHtml ? '<div style="padding:0 18px 14px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:10px">CLASSES</div><div>' + classHtml + '</div></div>' : '') +
-    (syllabusHtml ? '<div style="padding:0 18px 14px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:10px">SYLLABUS</div><div>' + syllabusHtml + '</div></div>' : '') +
-    (t.bio ? '<div style="padding:0 18px 24px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:10px">ABOUT</div><p style="font-size:13px;color:#9090a8;line-height:1.7;margin:0">' + t.bio + '</p></div>' : '');
+    // About — full width below
+    (t.bio ? '<div style="padding:0 18px 18px;border-top:1px solid rgba(255,255,255,0.06);padding-top:14px"><div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f5a623;margin-bottom:8px">ABOUT</div><p style="font-size:13px;color:#9090a8;line-height:1.7;margin:0">' + t.bio + '</p></div>' : '');
 
   document.getElementById('profile-sheet').innerHTML = html;
   document.getElementById('profile-overlay').style.display = 'flex';
