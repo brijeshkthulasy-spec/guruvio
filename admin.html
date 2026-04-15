@@ -388,13 +388,119 @@
       <div class="table-wrap">
         <div class="table-header"><h3>Applications</h3></div>
         <table>
-          <thead><tr><th>Name</th><th>Phone</th><th>Area</th><th>Subjects</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Name</th><th>Phone</th><th>Subjects</th><th>Submitted</th><th>View</th><th>Actions</th></tr></thead>
           <tbody id="reg-tbody"></tbody>
         </table>
       </div>
     </div>
 
     <!-- REVIEWS -->
+<!-- REGISTRATION DETAIL MODAL -->
+<div id="reg-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeRegModal()">
+  <div onclick="event.stopPropagation()" style="background:var(--card);border:1px solid var(--border);border-radius:20px;width:100%;max-width:600px;max-height:88vh;overflow-y:auto;position:relative">
+    <div style="position:sticky;top:0;z-index:10;background:var(--card);border-bottom:1px solid var(--border);border-radius:20px 20px 0 0;padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+      <h2 style="font-size:16px;font-weight:600;margin:0" id="reg-modal-title">Registration Details</h2>
+      <button onclick="closeRegModal()" style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;cursor:pointer;color:var(--light);font-size:20px;display:flex;align-items:center;justify-content:center">&#215;</button>
+    </div>
+    <div style="padding:20px">
+      <!-- Photo -->
+      <div style="display:flex;gap:16px;align-items:center;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+        <div id="rm-photo" style="width:64px;height:64px;border-radius:14px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;overflow:hidden;flex-shrink:0"></div>
+        <div>
+          <div id="rm-name-display" style="font-size:17px;font-weight:600;color:var(--light)"></div>
+          <div id="rm-phone-display" style="font-size:13px;color:var(--muted);margin-top:2px"></div>
+          <div id="rm-date-display" style="font-size:12px;color:var(--muted);margin-top:2px"></div>
+        </div>
+      </div>
+      <!-- Editable fields -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div><label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Full Name</label><input id="rm-name" class="config-input" style="width:100%"></div>
+        <div><label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Phone</label><input id="rm-phone" class="config-input" style="width:100%"></div>
+        <div><label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Experience</label><input id="rm-exp" class="config-input" style="width:100%" placeholder="e.g. 5 years"></div>
+        <div><label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Age</label><input id="rm-age" class="config-input" style="width:100%" type="number"></div>
+        <div><label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Qualification</label><input id="rm-qual" class="config-input" style="width:100%"></div>
+        <div><label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">College / University</label><input id="rm-edu" class="config-input" style="width:100%"></div>
+      </div>
+      <div style="margin-bottom:14px"><label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">About (Bio)</label><textarea id="rm-bio" class="config-input" rows="3" style="width:100%;resize:vertical"></textarea></div>
+      <!-- Areas -->
+      <div style="margin-bottom:14px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px">Areas Covered</label>
+        <div class="mcheckboxes" id="rm-areas-wrap">
+          <div class="cb-item"><input type="checkbox" id="rma1" value="Pattom"><label for="rma1">Pattom</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma2" value="Kowdiar"><label for="rma2">Kowdiar</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma3" value="Kazhakuttam"><label for="rma3">Kazhakuttam</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma4" value="Vanchiyoor"><label for="rma4">Vanchiyoor</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma5" value="Nemom"><label for="rma5">Nemom</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma6" value="Kesavadasapuram"><label for="rma6">Kesavadasapuram</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma7" value="Sasthamangalam"><label for="rma7">Sasthamangalam</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma8" value="Manacaud"><label for="rma8">Manacaud</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma9" value="Thampanoor"><label for="rma9">Thampanoor</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma10" value="Nalanchira"><label for="rma10">Nalanchira</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma11" value="Nanthancode"><label for="rma11">Nanthancode</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma12" value="Peroorkada"><label for="rma12">Peroorkada</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma13" value="Thirumala"><label for="rma13">Thirumala</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma14" value="Ulloor"><label for="rma14">Ulloor</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma15" value="Vattiyoorkavu"><label for="rma15">Vattiyoorkavu</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma16" value="Pappanamcode"><label for="rma16">Pappanamcode</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma17" value="Palayam"><label for="rma17">Palayam</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma18" value="Sreekaryam"><label for="rma18">Sreekaryam</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma19" value="PMG"><label for="rma19">PMG</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma20" value="Technopark"><label for="rma20">Technopark</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma21" value="Kuravankonam"><label for="rma21">Kuravankonam</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma22" value="Vellayambalam"><label for="rma22">Vellayambalam</label></div>
+          <div class="cb-item"><input type="checkbox" id="rma23" value="YMR"><label for="rma23">YMR</label></div>
+        </div>
+      </div>
+      <!-- Subjects -->
+      <div style="margin-bottom:14px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px">Subjects</label>
+        <div class="mcheckboxes">
+          <div class="cb-item"><input type="checkbox" id="rms1" value="Mathematics"><label for="rms1">Mathematics</label></div>
+          <div class="cb-item"><input type="checkbox" id="rms2" value="Physics"><label for="rms2">Physics</label></div>
+          <div class="cb-item"><input type="checkbox" id="rms3" value="Chemistry"><label for="rms3">Chemistry</label></div>
+          <div class="cb-item"><input type="checkbox" id="rms4" value="Biology"><label for="rms4">Biology</label></div>
+          <div class="cb-item"><input type="checkbox" id="rms5" value="English"><label for="rms5">English</label></div>
+          <div class="cb-item"><input type="checkbox" id="rms6" value="Malayalam"><label for="rms6">Malayalam</label></div>
+          <div class="cb-item"><input type="checkbox" id="rms7" value="Hindi"><label for="rms7">Hindi</label></div>
+          <div class="cb-item"><input type="checkbox" id="rms8" value="Social Science"><label for="rms8">Social Science</label></div>
+          <div class="cb-item"><input type="checkbox" id="rms9" value="Computer Science"><label for="rms9">Computer Science</label></div>
+          <div class="cb-item"><input type="checkbox" id="rms10" value="Accountancy"><label for="rms10">Accountancy</label></div>
+          <div class="cb-item"><input type="checkbox" id="rms11" value="Economics"><label for="rms11">Economics</label></div>
+          <div class="cb-item"><input type="checkbox" id="rms12" value="Geography"><label for="rms12">Geography</label></div>
+        </div>
+      </div>
+      <!-- Classes -->
+      <div style="margin-bottom:14px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px">Classes</label>
+        <div class="mcheckboxes">
+          <div class="cb-item"><input type="checkbox" id="rmc1" value="Class 1–5"><label for="rmc1">Class 1–5</label></div>
+          <div class="cb-item"><input type="checkbox" id="rmc2" value="Class 6–8"><label for="rmc2">Class 6–8</label></div>
+          <div class="cb-item"><input type="checkbox" id="rmc3" value="Class 9–10"><label for="rmc3">Class 9–10</label></div>
+          <div class="cb-item"><input type="checkbox" id="rmc4" value="Plus One"><label for="rmc4">Plus One</label></div>
+          <div class="cb-item"><input type="checkbox" id="rmc5" value="Plus Two"><label for="rmc5">Plus Two</label></div>
+          <div class="cb-item"><input type="checkbox" id="rmc6" value="Degree"><label for="rmc6">Degree</label></div>
+        </div>
+      </div>
+      <!-- Syllabus -->
+      <div style="margin-bottom:20px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px">Syllabus</label>
+        <div class="mcheckboxes">
+          <div class="cb-item"><input type="checkbox" id="rmsy1" value="CBSE"><label for="rmsy1">CBSE</label></div>
+          <div class="cb-item"><input type="checkbox" id="rmsy2" value="ICSE"><label for="rmsy2">ICSE</label></div>
+          <div class="cb-item"><input type="checkbox" id="rmsy3" value="IGCSE"><label for="rmsy3">IGCSE</label></div>
+          <div class="cb-item"><input type="checkbox" id="rmsy4" value="State Syllabus"><label for="rmsy4">State Syllabus</label></div>
+        </div>
+      </div>
+      <!-- Action buttons -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="save-btn" onclick="saveRegEdits()" style="flex:1">💾 Save Changes</button>
+        <button class="action-btn success" onclick="approveRegFromModal()" style="padding:10px 20px;font-size:14px" id="rm-approve-btn">✓ Approve & Publish</button>
+        <button class="action-btn danger" onclick="rejectRegFromModal()" style="padding:10px 20px;font-size:14px" id="rm-reject-btn">✗ Reject</button>
+      </div>
+    </div>
+  </div>
+</div>
+
     <div class="page" id="page-reviews">
       <div class="page-header"><h1>Reviews</h1><p>Approve or reject parent reviews before they go live</p></div>
       <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
@@ -510,6 +616,9 @@
           <div class="cb-item"><input type="checkbox" id="ma18" value="Sreekaryam"><label for="ma18">Sreekaryam</label></div>
           <div class="cb-item"><input type="checkbox" id="ma19" value="PMG"><label for="ma19">PMG</label></div>
           <div class="cb-item"><input type="checkbox" id="ma20" value="Technopark"><label for="ma20">Technopark</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma21" value="Kuravankonam"><label for="ma21">Kuravankonam</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma22" value="Vellayambalam"><label for="ma22">Vellayambalam</label></div>
+          <div class="cb-item"><input type="checkbox" id="ma23" value="YMR"><label for="ma23">YMR</label></div>
         </div>
       </div>
     </div>
@@ -943,39 +1052,41 @@ let _regs = [];
 
 async function loadRegsPage() {
   const tbody = document.getElementById('reg-tbody');
-  tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);padding:20px">Loading registrations...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:20px">Loading registrations...</td></tr>';
 
   _regs = await sbGet('registrations', 'order=submitted_at.desc');
   console.log('Fetched registrations:', _regs.length, _regs);
 
-  if (!_regs.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No registrations yet</td></tr>';
+  // Show only pending
+  const pending = _regs.filter(r => r.status === 'pending');
+
+  if (!pending.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No pending registrations</td></tr>';
+    const rb = document.getElementById('reg-badge');
+    if (rb) { rb.textContent = 0; rb.style.display = 'none'; }
     return;
   }
 
-  tbody.innerHTML = _regs.map(r => {
+  tbody.innerHTML = pending.map(r => {
     const av = r.photo_url
       ? '<img src="' + r.photo_url + '" style="width:28px;height:28px;border-radius:7px;object-fit:cover;vertical-align:middle;margin-right:7px">'
       : '<span style="display:inline-flex;width:28px;height:28px;border-radius:7px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:12px;vertical-align:middle;margin-right:7px">' + (r.name||'?')[0] + '</span>';
-    const pillClass = r.status==='pending' ? 'pill-yellow' : r.status==='approved' ? 'pill-green' : 'pill-red';
-    const actions = r.status==='pending'
-      ? '<button class="action-btn success" onclick="approveReg(' + r.id + ')">Approve</button> <button class="action-btn danger" onclick="rejectReg(' + r.id + ')">Reject</button>'
-      : '';
     return '<tr>' +
       '<td>' + av + '<strong>' + r.name + '</strong></td>' +
       '<td>' + r.phone + '</td>' +
-      '<td>' + (r.area||'—') + '</td>' +
       '<td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (r.subjects||[]).join(', ') + '</td>' +
       '<td>' + (r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : '—') + '</td>' +
-      '<td><span class="pill ' + pillClass + '">' + r.status + '</span></td>' +
-      '<td>' + actions + '</td>' +
-      '</tr>';
+      '<td><button class="action-btn" onclick="openRegModal(' + r.id + ')">👁 View</button></td>' +
+      '<td>' +
+        '<button class="action-btn success" onclick="approveReg(' + r.id + ')">Approve</button> ' +
+        '<button class="action-btn danger" onclick="rejectReg(' + r.id + ')">Reject</button>' +
+      '</td>' +
+    '</tr>';
   }).join('');
 
-  // Update badge
-  const pending = _regs.filter(r=>r.status==='pending').length;
+  const count = pending.length;
   const rb = document.getElementById('reg-badge');
-  if (rb) { rb.textContent = pending; rb.style.display = pending > 0 ? 'inline' : 'none'; }
+  if (rb) { rb.textContent = count; rb.style.display = count > 0 ? 'inline' : 'none'; }
 }
 
 function getRegs() { return _regs; }
@@ -1019,8 +1130,105 @@ async function rejectReg(id) {
 }
 
 // ============================================
-// REVIEWS
+// REGISTRATION VIEW / EDIT MODAL
 // ============================================
+let _currentRegId = null;
+
+function openRegModal(id) {
+  const r = _regs.find(x => x.id === id);
+  if (!r) return;
+  _currentRegId = id;
+
+  // Header info
+  const photo = document.getElementById('rm-photo');
+  if (r.photo_url) {
+    photo.innerHTML = '<img src="' + r.photo_url + '" style="width:100%;height:100%;object-fit:cover">';
+  } else {
+    photo.textContent = (r.name||'?')[0].toUpperCase();
+  }
+  document.getElementById('rm-name-display').textContent = r.name || '';
+  document.getElementById('rm-phone-display').textContent = r.phone || '';
+  document.getElementById('rm-date-display').textContent = r.submitted_at ? 'Submitted: ' + new Date(r.submitted_at).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) : '';
+
+  // Editable fields
+  document.getElementById('rm-name').value = r.name || '';
+  document.getElementById('rm-phone').value = r.phone || '';
+  document.getElementById('rm-exp').value  = r.exp  || '';
+  document.getElementById('rm-age').value  = r.age  || '';
+  document.getElementById('rm-qual').value = r.qual || '';
+  document.getElementById('rm-edu').value  = r.edu  || '';
+  document.getElementById('rm-bio').value  = r.bio  || '';
+
+  // Areas
+  const areas = r.areas || (r.area ? [r.area] : []);
+  document.querySelectorAll('[id^=rma]').forEach(cb => { cb.checked = areas.includes(cb.value); });
+
+  // Subjects
+  document.querySelectorAll('[id^=rms]').forEach(cb => { cb.checked = (r.subjects||[]).includes(cb.value); });
+
+  // Classes
+  document.querySelectorAll('[id^=rmc]').forEach(cb => { cb.checked = (r.classes||[]).includes(cb.value); });
+
+  // Syllabus
+  document.querySelectorAll('[id^=rmsy]').forEach(cb => { cb.checked = (r.syllabus||[]).includes(cb.value); });
+
+  // Show/hide approve button based on status
+  const isPending = r.status === 'pending';
+  document.getElementById('rm-approve-btn').style.display = isPending ? 'inline-block' : 'none';
+  document.getElementById('rm-reject-btn').style.display  = isPending ? 'inline-block' : 'none';
+
+  document.getElementById('reg-modal').style.display = 'flex';
+}
+
+function closeRegModal() {
+  document.getElementById('reg-modal').style.display = 'none';
+  _currentRegId = null;
+}
+
+async function saveRegEdits() {
+  if (!_currentRegId) return;
+  const areas    = [...document.querySelectorAll('[id^=rma]:checked')].map(c=>c.value);
+  const subjects = [...document.querySelectorAll('[id^=rms]:checked')].map(c=>c.value);
+  const classes  = [...document.querySelectorAll('[id^=rmc]:checked')].map(c=>c.value);
+  const syllabus = [...document.querySelectorAll('[id^=rmsy]:checked')].map(c=>c.value);
+  const row = {
+    name:     document.getElementById('rm-name').value.trim(),
+    phone:    document.getElementById('rm-phone').value.trim(),
+    exp:      document.getElementById('rm-exp').value.trim(),
+    age:      parseInt(document.getElementById('rm-age').value) || null,
+    qual:     document.getElementById('rm-qual').value.trim(),
+    edu:      document.getElementById('rm-edu').value.trim(),
+    bio:      document.getElementById('rm-bio').value.trim(),
+    area:     areas[0] || '',
+    areas, subjects, classes, syllabus
+  };
+  const ok = await sbPatch('registrations', _currentRegId, row);
+  if (ok) {
+    toast('Registration updated!');
+    // Update local cache
+    const idx = _regs.findIndex(r => r.id === _currentRegId);
+    if (idx >= 0) Object.assign(_regs[idx], row);
+    // Update header display
+    document.getElementById('rm-name-display').textContent = row.name;
+  } else {
+    toast('Failed to save. Please try again.');
+  }
+}
+
+async function approveRegFromModal() {
+  if (!_currentRegId) return;
+  await saveRegEdits();
+  closeRegModal();
+  await approveReg(_currentRegId);
+}
+
+async function rejectRegFromModal() {
+  if (!_currentRegId) return;
+  closeRegModal();
+  await rejectReg(_currentRegId);
+}
+
+
 let _reviews = [];
 
 async function loadReviewsPage(status) {
