@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tutor Profile — Guruvio</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--deep:#0a0a14;--card:#12121f;--accent:#f5a623;--teal:#00c9a7;--light:#f7f4ee;--muted:#9090a8;--border:rgba(255,255,255,0.07)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--deep);color:var(--light);font-family:"DM Sans",sans-serif;min-height:100vh}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(10,10,20,0.95);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.logo{font-family:"Playfair Display",serif;font-size:22px;font-weight:900;color:var(--light);text-decoration:none}
+.logo span{color:var(--accent)}
+.nav-back{color:var(--muted);text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px;transition:color 0.2s}
+.nav-back:hover{color:var(--light)}
+.page{padding:88px 16px 48px;max-width:600px;margin:0 auto}
+.profile-card{background:var(--card);border:1px solid var(--border);border-radius:24px;overflow:hidden}
+.profile-header{padding:24px;display:grid;gap:20px;grid-template-columns:160px 1fr;align-items:start;border-bottom:1px solid var(--border)}
+@media(max-width:520px){nav{padding:14px 16px}.profile-header{grid-template-columns:1fr}.page{padding:76px 12px 40px}}
+.profile-photo{width:100%;aspect-ratio:1/1;border-radius:16px;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:40px;font-weight:700;color:#fff;max-height:160px}
+.profile-name{font-family:"Playfair Display",serif;font-size:24px;font-weight:700;margin-bottom:6px}
+.profile-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:100px;padding:3px 10px;font-size:11px;color:#818cf8;margin-bottom:14px}
+.info-row{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.info-row span{color:var(--light);font-weight:500}
+.section{padding:18px 24px;border-bottom:1px solid var(--border)}
+.section:last-child{border-bottom:none}
+.sec-label{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.ta{background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.25);border-radius:8px;padding:5px 11px;font-size:12px;color:#f5a623}
+.ts{background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.25);border-radius:8px;padding:5px 11px;font-size:12px;color:#38bdf8}
+.tc{background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.2);border-radius:8px;padding:5px 11px;font-size:12px;color:#00c9a7}
+.tsy{background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:5px 11px;font-size:12px;color:#818cf8}
+.bio{font-size:14px;color:var(--muted);line-height:1.8}
+.actions{padding:20px 24px 24px;display:flex;flex-direction:column;gap:10px}
+.wa-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;border:none;border-radius:14px;padding:16px 24px;font-size:15px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;width:100%;transition:all 0.2s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.wa-btn:hover{background:#1fc557;transform:translateY(-1px);box-shadow:0 8px 24px rgba(37,211,102,0.3)}
+.wa-btn:active{transform:scale(0.98)}
+.share-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid var(--border);border-radius:14px;padding:12px 24px;font-size:13px;font-weight:500;cursor:pointer;font-family:"DM Sans",sans-serif;width:100%;transition:all 0.2s}
+.share-btn:hover{background:rgba(255,255,255,0.08);color:var(--light)}
+.loading{text-align:center;padding:80px 24px;color:var(--muted)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s ease-in-out infinite;margin:0 3px}
+.dot:nth-child(2){animation-delay:0.2s}.dot:nth-child(3){animation-delay:0.4s}
+@keyframes pulse{0%,100%{opacity:0.3;transform:scale(0.8)}50%{opacity:1;transform:scale(1)}}
+.footer-note{text-align:center;padding:24px 16px 0;color:var(--muted);font-size:13px}
+.footer-note a{color:var(--accent);text-decoration:none;font-weight:500}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1e1e35;color:var(--light);padding:12px 22px;border-radius:100px;font-size:13px;font-weight:500;border:1px solid var(--border);z-index:9999;transition:transform 0.3s cubic-bezier(0.34,1.4,0.64,1);pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="logo">Guru<span>vio</span></a>
+  <a href="index.html" class="nav-back">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    All Tutors
+  </a>
+</nav>
+<div class="page">
+  <div id="content">
+    <div class="loading"><div style="margin-bottom:16px"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>Loading profile...</div>
+  </div>
+  <div class="footer-note" style="margin-top:24px">Looking for more tutors? <a href="index.html">Browse all on Guruvio</a></div>
+</div>
+<div id="toast" class="toast">Copied!</div>
+<script>
+var SUPA_URL='https://lmqsoxrnxrktzosmwkwd.supabase.co';
+var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI';
+var AV_COLORS={av1:'linear-gradient(135deg,#f5a623,#e05c2a)',av2:'linear-gradient(135deg,#00c9a7,#0095ff)',av3:'linear-gradient(135deg,#a855f7,#ec4899)',av4:'linear-gradient(135deg,#10b981,#3b82f6)',av5:'linear-gradient(135deg,#f59e0b,#ef4444)',av6:'linear-gradient(135deg,#6366f1,#8b5cf6)',av7:'linear-gradient(135deg,#06b6d4,#6366f1)',av8:'linear-gradient(135deg,#84cc16,#14b8a6)'};
+
+function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2500)}
+
+function cleanPhone(phone){var c=String(phone||'').replace(/\D/g,'');if(c.charAt(0)==='0')c=c.slice(1);if(c.length===10)c='91'+c;return c}
+
+function openWhatsApp(phone,name){var p=cleanPhone(phone);if(!p||p.length<10){alert('No valid WhatsApp number for this tutor.');return}var msg=encodeURIComponent('\u{1F44B} Hello *'+name+'*, I found your profile on *Guruvio* \u{1F393}\n\nYour profile looks great and I am interested in your tutoring services! \u{1F31F}\n\nCould we talk about availability and charges? \u{1F4DA}');window.location.href='https://wa.me/'+p+'?text='+msg}
+
+var _profileTutor = null;
+function openWhatsAppById(){
+  if(!_profileTutor) return;
+  var p=cleanPhone(_profileTutor.phone);
+  if(!p||p.length<10){alert('No valid WhatsApp number.');return}
+  var msg=encodeURIComponent('\u{1F44B} Hello *'+_profileTutor.name+'*, I found your profile on *Guruvio* \u{1F393}\n\nYour profile looks great and I am interested in your tutoring services! \u{1F31F}\n\nCould we talk about availability and charges? \u{1F4DA}');
+  window.location.href='https://wa.me/'+p+'?text='+msg;
+}
+function copyLink(){var url=window.location.href;if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){showToast('Profile link copied!')})}else{var el=document.createElement('textarea');el.value=url;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);showToast('Profile link copied!')}}
+
+function tags(arr,cls){return(arr||[]).map(function(v){return'<span class="'+cls+'">'+v+'</span>'}).join('')}
+
+var WA_SVG='<svg style="width:18px;height:18px;fill:#fff;flex-shrink:0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.549 4.122 1.512 5.862L.057 23.428a.5.5 0 0 0 .614.614l5.566-1.455A11.946 11.946 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.946a9.94 9.94 0 0 1-5.073-1.39l-.364-.215-3.773.988.988-3.774-.215-.364A9.94 9.94 0 0 1 2.054 12C2.054 6.497 6.497 2.054 12 2.054S21.946 6.497 21.946 12 17.503 21.946 12 21.946z"/></svg>';
+
+async function loadProfile(){
+  var params=new URLSearchParams(window.location.search);
+  var id=params.get('id');
+  var content=document.getElementById('content');
+  if(!id){content.innerHTML='<div class="loading">No tutor ID in URL.</div>';return}
+  try{
+    var r=await fetch(SUPA_URL+'/rest/v1/tutors?id=eq.'+id+'&active=eq.true',{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+    var data=await r.json();
+    if(!data||!data.length){content.innerHTML='<div class="loading">Tutor profile not found.</div>';return}
+    var t=data[0]; _profileTutor=t;
+    document.title=(t.name||'Tutor')+' — Guruvio';
+    var avStyle=AV_COLORS[t.av_class||'av1']||AV_COLORS.av1;
+    var photoHtml=t.photo_url?'<img src="'+t.photo_url+'" style="width:100%;height:100%;object-fit:cover;border-radius:16px">':'<span style="font-size:40px;font-weight:700;color:#fff">'+(t.name||'T')[0].toUpperCase()+'</span>';
+    var areas=t.areas||(t.area?[t.area]:[]);
+    var sylValues=['CBSE','ICSE','IGCSE','State Syllabus'];
+    var subjects=(t.subjects||[]).filter(function(s){return sylValues.indexOf(s)===-1});
+    var areaHtml=tags(areas,'ta');
+    var subHtml=tags(subjects,'ts');
+    var clsHtml=tags(t.classes,'tc');
+    var sylHtml=tags(t.syllabus,'tsy');
+    content.innerHTML=
+      '<div class="profile-card">'+
+        '<div class="profile-header">'+
+          '<div class="profile-photo" style="'+avStyle+'">'+photoHtml+'</div>'+
+          '<div>'+
+            '<div class="profile-name">'+(t.name||'')+'</div>'+
+            (t.active?'<div class="profile-badge">&#9679; Active</div>':'')+
+            (t.exp?'<div class="info-row">&#9203; <span>'+t.exp+'</span></div>':'')+
+            (t.qual?'<div class="info-row">&#127891; <span>'+t.qual+'</span></div>':'')+
+            (t.edu?'<div class="info-row">&#127979; <span>'+t.edu+'</span></div>':'')+
+            '<div class="info-row">&#127968; <span>Home visits &middot; Online</span></div>'+
+          '</div>'+
+        '</div>'+
+        (areaHtml?'<div class="section"><div class="sec-label">Areas Covered</div><div class="tags">'+areaHtml+'</div></div>':'')+
+        (subHtml?'<div class="section"><div class="sec-label">Subjects</div><div class="tags">'+subHtml+'</div></div>':'')+
+        (clsHtml?'<div class="section"><div class="sec-label">Classes</div><div class="tags">'+clsHtml+'</div></div>':'')+
+        (sylHtml?'<div class="section"><div class="sec-label">Syllabus</div><div class="tags">'+sylHtml+'</div></div>':'')+
+        (t.bio?'<div class="section"><div class="sec-label">About</div><div class="bio">'+t.bio+'</div></div>':'')+
+        '<div class="actions">'+
+          '<button type="button" class="wa-btn" onclick="openWhatsAppById()">'+(WA_SVG)+' Connect on WhatsApp</button>'+
+          '<button type="button" class="share-btn" onclick="copyLink()">&#128279; Copy Profile Link</button>'+
+        '</div>'+
+      '</div>';
+  }catch(e){content.innerHTML='<div class="loading">Error loading profile. Please try again.</div>'}
+}
+loadProfile();
+</script>
+</body>
+</html>

@@ -941,7 +941,7 @@ function renderTutorTable(filter) {
       '<td>' + (t.area||'—') + '</td>' +
       '<td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (t.subjects||[]).join(', ') + '</td>' +
       '<td><span class="pill ' + (t.active?'pill-green':'pill-red') + '">' + (t.active?'Active':'Hidden') + '</span></td>' +
-      '<td><button class="action-btn" onclick="openEditTutor(' + t.id + ')">Edit</button> <button class="action-btn danger" onclick="deleteTutor(' + t.id + ')">Delete</button></td>' +
+      '<td><button class="action-btn" onclick="openEditTutor(' + t.id + ')">Edit</button> <button class="action-btn" onclick="shareTutor(' + t.id + ')" style="border-color:#00c9a7;color:#00c9a7">&#128279; Share</button> <button class="action-btn danger" onclick="deleteTutor(' + t.id + ')">Delete</button></td>' +
       '</tr>';
   }).join('');
 }
@@ -1041,6 +1041,21 @@ async function saveTutor() {
   closeModal();
   toast('Tutor saved successfully!');
   loadTutorsPage();
+}
+
+function shareTutor(id) {
+  var url = window.location.origin + '/tutor-profile.html?id=' + id;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function(){ toast('Profile link copied! Share it on WhatsApp.'); });
+  } else {
+    var el = document.createElement('textarea');
+    el.value = url;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    toast('Profile link copied!');
+  }
 }
 
 function filterTutorTable(v) { renderTutorTable(v.toLowerCase()); }
