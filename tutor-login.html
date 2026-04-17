@@ -815,9 +815,12 @@ function loadOptimise(tutor) {
 }
 
 // ---- TABS ----
+var ID_SECRET=3721;
+function encodeId(id){var xored=parseInt(id)^ID_SECRET;return btoa(String(xored)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');}
+
 function copyProfileLink() {
   if (!currentTutor) return;
-  var url = window.location.origin + '/tutor-profile.html?id=' + currentTutor.id;
+  var url = window.location.origin + '/tutor-profile.html?id=' + encodeId(currentTutor.id);
   if (navigator.clipboard) {
     navigator.clipboard.writeText(url).then(function(){ toast('Profile link copied! Share it on WhatsApp.'); });
   } else {

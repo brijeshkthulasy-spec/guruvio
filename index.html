@@ -540,6 +540,13 @@ async function sbPost(table, data) {
 }
 
 // ============================================================
+// ID ENCODING
+// ============================================================
+var ID_SECRET=3721;
+function encodeId(id){var xored=parseInt(id)^ID_SECRET;return btoa(String(xored)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');}
+function safePhotoUrl(url){if(!url)return null;if(url.startsWith('data:image/')||url.startsWith('https://')||url.startsWith('http://'))return url;return null;}
+
+// ============================================================
 // TUTOR DATA
 // ============================================================
 var _tutors = [];
@@ -598,8 +605,9 @@ function cleanPhone(phone) {
 
 
 function renderCard(t) {
-  var av = t.photoUrl
-    ? '<div class="avatar ' + t.avClass + '"><img src="' + t.photoUrl + '" alt="' + t.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:14px"></div>'
+  var safePhoto = safePhotoUrl(t.photoUrl);
+  var av = safePhoto
+    ? '<div class="avatar ' + t.avClass + '"><img src="' + safePhoto + '" alt="' + t.name + '" style="width:100%;height:100%;object-fit:cover;border-radius:14px"></div>'
     : '<div class="avatar ' + t.avClass + '">' + t.avatar + '</div>';
 
   var areas = (t.areas && t.areas.length) ? t.areas : (t.area ? [t.area] : []);
@@ -737,8 +745,9 @@ function openProfile(tutorId) {
   if (!t) { console.warn('openProfile: tutor not found', tutorId); return; }
 
   var avStyle = AV_COLORS[t.avClass] || AV_COLORS.av1;
-  var photoHtml = t.photoUrl
-    ? '<img src="' + t.photoUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:16px">'
+  var safePhoto2 = safePhotoUrl(t.photoUrl);
+  var photoHtml = safePhoto2
+    ? '<img src="' + safePhoto2 + '" style="width:100%;height:100%;object-fit:cover;border-radius:16px">'
     : '<span style="font-size:26px;font-weight:700;color:#fff">' + t.avatar + '</span>';
 
   var rows = '';

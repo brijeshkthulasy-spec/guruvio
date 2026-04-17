@@ -931,8 +931,9 @@ function renderTutorTable(filter) {
   const tbody = document.getElementById('tutor-tbody');
   if (!tutors.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No tutors found</td></tr>'; return; }
   tbody.innerHTML = tutors.map(t => {
-    const av = t.photo_url
-      ? '<img src="' + t.photo_url + '" style="width:32px;height:32px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:8px">'
+    const safeP = safePhotoUrl(t.photo_url);
+    const av = safeP
+      ? '<img src="' + safeP + '" style="width:32px;height:32px;border-radius:8px;object-fit:cover;vertical-align:middle;margin-right:8px">'
       : '<span style="display:inline-flex;width:32px;height:32px;border-radius:8px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:13px;vertical-align:middle;margin-right:8px">' + (t.name||'?')[0] + '</span>';
     return '<tr draggable="true" data-id="' + t.id + '" style="cursor:grab" ' +
       'ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dragDrop(event)" ondragend="dragEnd(event)">' +
@@ -1043,8 +1044,12 @@ async function saveTutor() {
   loadTutorsPage();
 }
 
+var ID_SECRET=3721;
+function encodeId(id){var xored=parseInt(id)^ID_SECRET;return btoa(String(xored)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');}
+function safePhotoUrl(url){if(!url)return null;if(url.startsWith('data:image/')||url.startsWith('https://')||url.startsWith('http://'))return url;return null;}
+
 function shareTutor(id) {
-  var url = window.location.origin + '/tutor-profile.html?id=' + id;
+  var url = window.location.origin + '/tutor-profile.html?id=' + encodeId(id);
   if (navigator.clipboard) {
     navigator.clipboard.writeText(url).then(function(){ toast('Profile link copied! Share it on WhatsApp.'); });
   } else {
@@ -1070,7 +1075,6 @@ async function loadRegsPage() {
   tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:20px">Loading registrations...</td></tr>';
 
   _regs = await sbGet('registrations', 'order=submitted_at.desc');
-  console.log('Fetched registrations:', _regs.length, _regs);
 
   // Show only pending
   const pending = _regs.filter(r => r.status === 'pending');
@@ -1372,8 +1376,8 @@ function openEditTutor(id) {
   document.querySelectorAll('[id^=mc]').forEach(cb => { cb.checked = (t.classes||[]).includes(cb.value); });
   document.querySelectorAll('[id^=msy]').forEach(cb => { cb.checked = (t.syllabus||[]).includes(cb.value); });
   if (t.photo_url) {
-    adminPhotoUrl = t.photo_url;
-    document.getElementById('m-photo-preview').innerHTML = '<img src="' + t.photo_url + '" style="width:100%;height:100%;object-fit:cover;">';
+    adminPhotoUrl = safePhotoUrl(t.photo_url);
+    if(adminPhotoUrl) document.getElementById('m-photo-preview').innerHTML = '<img src="' + adminPhotoUrl + '" style="width:100%;height:100%;object-fit:cover;">';
   }
   document.getElementById('tutor-modal').classList.add('open');
 }
