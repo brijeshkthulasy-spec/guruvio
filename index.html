@@ -576,7 +576,7 @@ async function loadTutors() {
   if (data && data.length > 0) {
     _tutors = data.map(function(t) {
       return {
-        id: t.id, name: t.name, phone: t.phone, area: t.area,
+        id: t.id, name: t.name, phone: maskPhone(t.phone || ''), area: t.area,
         subjects: t.subjects || [], classes: t.classes || [],
         exp: t.exp || '', age: t.age, qual: t.qual, edu: t.edu,
         bio: t.bio, photoUrl: t.photo_url,
