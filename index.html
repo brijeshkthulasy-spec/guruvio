@@ -666,6 +666,7 @@ function renderCard(t) {
   var syllabusHtml= (t.syllabus||[]).map(function(sy){ return '<span style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);border-radius:6px;padding:3px 9px;font-size:11px;color:#818cf8">' + sy + '</span>'; }).join('');
 
   return '<div class="tutor-card visible" data-id="' + t.id + '">' +
+    (t.demoClass ? '<div style="position:absolute;top:14px;right:14px;background:rgba(0,201,167,0.12);border:1px solid rgba(0,201,167,0.35);border-radius:100px;padding:4px 10px;font-size:10px;color:#00c9a7;font-weight:700;letter-spacing:0.5px;z-index:2">&#10003; Free Demo</div>' : '') +
     '<div class="card-top">' + av +
       '<div><div class="tutor-name">' + t.name + '</div><div class="tutor-exp">' + (t.exp||'') + ' · ' + (t.active ? '<span style="color:#818cf8">&#9679; Active</span>' : '') + '</div></div>' +
     '</div>' +
@@ -673,7 +674,6 @@ function renderCard(t) {
     '<div class="card-tags">' + subjectHtml + '</div>' +
     '<div class="card-tags">' + classHtml + '</div>' +
     '<div class="card-tags">' + syllabusHtml + '</div>' +
-    (t.demoClass ? '<div class="card-tags"><span style="background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.3);border-radius:6px;padding:3px 10px;font-size:11px;color:#00c9a7;font-weight:600">&#10003; Free Demo</span></div>' : '') +
     '<div class="card-spacer"></div>' +
     '<div class="card-footer"><div class="tutor-meta">&#127968; ' + (t.mode || 'Home &amp; Online') + '</div></div>' +
     '<button type="button" class="view-profile-btn" onclick="openProfile(' + t.id + ')">' +

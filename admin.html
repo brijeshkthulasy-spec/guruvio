@@ -501,10 +501,16 @@
             <option value="Online only">Online only</option>
           </select>
         </div>
-        <div style="display:flex;align-items:center;padding-top:22px">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--light);font-weight:500">
-            <input type="checkbox" id="rm-demo" style="width:16px;height:16px;accent-color:#00c9a7;cursor:pointer">
-            Free Demo Class
+        <div style="display:flex;flex-direction:column;gap:6px;padding-top:4px">
+          <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Free Demo Class</label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:4px">
+            <div style="position:relative;width:44px;height:24px;flex-shrink:0">
+              <input type="checkbox" id="rm-demo" style="opacity:0;width:0;height:0;position:absolute">
+              <span onclick="this.previousElementSibling.click()" id="rm-demo-track" style="position:absolute;inset:0;background:rgba(255,255,255,0.1);border-radius:100px;transition:background 0.2s;cursor:pointer;border:1px solid rgba(255,255,255,0.15)">
+                <span id="rm-demo-thumb" style="position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></span>
+              </span>
+            </div>
+            <span style="font-size:13px;color:var(--light)">Enabled</span>
           </label>
         </div>
       </div>
@@ -693,10 +699,16 @@
           <option value="Online only">Online only</option>
         </select>
       </div>
-      <div class="mfield" style="display:flex;align-items:center;gap:10px;padding-top:24px">
-        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--light);font-weight:500">
-          <input type="checkbox" id="m-demo" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer">
-          Free Demo Class
+      <div class="mfield" style="display:flex;flex-direction:column;gap:6px;padding-top:4px">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Free Demo Class</label>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:4px">
+          <div style="position:relative;width:44px;height:24px;flex-shrink:0">
+            <input type="checkbox" id="m-demo" style="opacity:0;width:0;height:0;position:absolute">
+            <span onclick="this.previousElementSibling.click()" id="m-demo-track" style="position:absolute;inset:0;background:rgba(255,255,255,0.1);border-radius:100px;transition:background 0.2s;cursor:pointer;border:1px solid rgba(255,255,255,0.15)">
+              <span id="m-demo-thumb" style="position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></span>
+            </span>
+          </div>
+          <span style="font-size:13px;color:var(--light)">Enabled</span>
         </label>
       </div>
     </div>
@@ -1220,7 +1232,7 @@ function openRegModal(id) {
   document.getElementById('rm-edu').value  = r.edu  || '';
   document.getElementById('rm-bio').value  = r.bio  || '';
   if(document.getElementById('rm-mode')) document.getElementById('rm-mode').value = r.mode || 'Home visits & Online';
-  if(document.getElementById('rm-demo')) document.getElementById('rm-demo').checked = r.demo_class || false;
+  if(document.getElementById('rm-demo')) { document.getElementById('rm-demo').checked = r.demo_class || false; syncToggle('rm-demo', r.demo_class || false); }
 
   // Areas
   const areas = r.areas || (r.area ? [r.area] : []);
@@ -1398,6 +1410,26 @@ function openAddTutor() {
   document.getElementById('tutor-modal').classList.add('open');
 }
 
+function syncToggle(id, checked) {
+  var track = document.getElementById(id+'-track');
+  var thumb = document.getElementById(id+'-thumb');
+  if (!track || !thumb) return;
+  if (checked) {
+    track.style.background = '#00c9a7';
+    track.style.borderColor = '#00c9a7';
+    thumb.style.transform = 'translateX(20px)';
+  } else {
+    track.style.background = 'rgba(255,255,255,0.1)';
+    track.style.borderColor = 'rgba(255,255,255,0.15)';
+    thumb.style.transform = 'translateX(0)';
+  }
+}
+// Wire toggle change events
+['m-demo','rm-demo'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('change', function(){ syncToggle(id, this.checked); });
+});
+
 function openEditTutor(id) {
   const t = _tutors.find(x => x.id === id);
   if (!t) { toast('Tutor not found. Refresh the page.'); return; }
@@ -1412,6 +1444,7 @@ function openEditTutor(id) {
   document.getElementById('m-qual').value = t.qual || '';
   document.getElementById('m-mode').value = t.mode || 'Home visits & Online';
   document.getElementById('m-demo').checked = t.demo_class || false;
+  syncToggle('m-demo', t.demo_class || false);
   document.getElementById('m-edu').value = t.edu || '';
   document.getElementById('m-bio').value = t.bio || '';
   document.getElementById('m-avclass').value = t.av_class || 'av1';

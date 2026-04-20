@@ -136,10 +136,16 @@
             <option value="Home visits &amp; Online">Home visits &amp; Online</option>
           </select>
         </div>
-        <div class="field" style="display:flex;align-items:center;gap:12px;padding-top:28px">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:500;color:var(--light)">
-            <input type="checkbox" id="r-demo" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer">
-            Offers Free Demo Class
+        <div class="field" style="display:flex;flex-direction:column;gap:8px;padding-top:4px">
+          <label style="font-size:13px;font-weight:500;color:var(--muted)">Free Demo Class</label>
+          <label style="display:flex;align-items:center;gap:12px;cursor:pointer">
+            <div style="position:relative;width:48px;height:26px;flex-shrink:0">
+              <input type="checkbox" id="r-demo" style="opacity:0;width:0;height:0;position:absolute">
+              <span onclick="this.previousElementSibling.click()" style="position:absolute;inset:0;background:rgba(255,255,255,0.1);border-radius:100px;transition:background 0.2s;cursor:pointer;border:1px solid rgba(255,255,255,0.15)" id="r-demo-track">
+                <span style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.3)" id="r-demo-thumb"></span>
+              </span>
+            </div>
+            <span style="font-size:13px;color:var(--light);font-weight:500">I offer a free demo class</span>
           </label>
         </div>
       </div>
@@ -304,13 +310,17 @@ async function submitRegistration() {
 
   const bio = document.getElementById('r-bio').value.trim();
   const mode = document.getElementById('r-mode').value;
-  if (!name||!phone||!areas.length||!exp||!qual||!bio||!mode||!subjects.length||!classes.length||!syllabus.length) {
-    alert('Please fill all required fields. About You is mandatory — parents read this to decide!'); return;
-  }
-  if (phone.length !== 10) {
-    alert('Please enter a valid 10-digit mobile number (without country code).');
-    document.getElementById('r-phone').focus(); return;
-  }
+
+  if (!name) { alert('Please enter your full name.'); document.getElementById('r-name').focus(); return; }
+  if (!phone || phone.length !== 10) { alert('Please enter a valid 10-digit WhatsApp number (without country code or spaces).'); document.getElementById('r-phone').focus(); return; }
+  if (!exp) { alert('Please enter your years of experience.'); document.getElementById('r-exp').focus(); return; }
+  if (!qual) { alert('Please select your qualification.'); document.getElementById('r-qual').focus(); return; }
+  if (!mode) { alert('Please select your teaching mode (Home visits, Online or both).'); document.getElementById('r-mode').focus(); return; }
+  if (!areas.length) { alert('Please select at least one area you cover in Trivandrum.'); return; }
+  if (!subjects.length) { alert('Please select at least one subject you teach.'); return; }
+  if (!classes.length) { alert('Please select at least one class you teach.'); return; }
+  if (!syllabus.length) { alert('Please select at least one syllabus.'); return; }
+  if (!bio) { alert('Please write something in the About You section — parents read this before contacting you.'); document.getElementById('r-bio').focus(); return; }
   if (password && password.length < 6) {
     alert('Password must be at least 6 characters.'); return;
   }
@@ -364,6 +374,20 @@ async function submitRegistration() {
     alert('Submission failed. Please try again.\n' + e.message);
   }
 }
+// Toggle switch visual
+document.getElementById('r-demo').addEventListener('change', function() {
+  var track = document.getElementById('r-demo-track');
+  var thumb = document.getElementById('r-demo-thumb');
+  if (this.checked) {
+    track.style.background = '#00c9a7';
+    track.style.borderColor = '#00c9a7';
+    thumb.style.transform = 'translateX(22px)';
+  } else {
+    track.style.background = 'rgba(255,255,255,0.1)';
+    track.style.borderColor = 'rgba(255,255,255,0.15)';
+    thumb.style.transform = 'translateX(0)';
+  }
+});
 </script>
 </body>
 </html>
