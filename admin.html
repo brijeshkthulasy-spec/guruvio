@@ -491,6 +491,23 @@
           <div class="cb-item"><input type="checkbox" id="rmsy4" value="State Syllabus"><label for="rmsy4">State Syllabus</label></div>
         </div>
       </div>
+      <!-- Teaching Mode & Demo -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+        <div>
+          <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:5px">Teaching Mode</label>
+          <select id="rm-mode" class="config-input" style="width:100%">
+            <option value="Home visits &amp; Online">Home visits &amp; Online</option>
+            <option value="Home visits only">Home visits only</option>
+            <option value="Online only">Online only</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;padding-top:22px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--light);font-weight:500">
+            <input type="checkbox" id="rm-demo" style="width:16px;height:16px;accent-color:#00c9a7;cursor:pointer">
+            Free Demo Class
+          </label>
+        </div>
+      </div>
       <!-- Action buttons -->
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="save-btn" onclick="saveRegEdits()" style="flex:1">💾 Save Changes</button>
@@ -623,7 +640,7 @@
       </div>
     </div>
     <div class="mfield-row">
-      <div class="mfield"><label>Qualification</label><input type="text" id="m-qual" placeholder="e.g. B.Sc, B.Ed"></div>
+      <div class="mfield"><label>Qualification</label><select id="m-qual"><option value="">Select</option><option>B.Ed</option><option>M.Ed</option><option>B.Sc</option><option>M.Sc</option><option>B.Tech</option><option>M.Tech</option><option>BA</option><option>MA</option><option>BBA</option><option>MBA</option><option>BCA</option><option>MCA</option><option>PhD</option><option>Other</option></select></div>
       <div class="mfield"><label>College / University</label><input type="text" id="m-edu" placeholder="e.g. University of Kerala"></div>
     </div>
     <div class="mfield">
@@ -665,6 +682,22 @@
         <div class="cb-item"><input type="checkbox" id="msy2" value="ICSE"><label for="msy2">ICSE</label></div>
         <div class="cb-item"><input type="checkbox" id="msy3" value="IGCSE"><label for="msy3">IGCSE</label></div>
         <div class="cb-item"><input type="checkbox" id="msy4" value="State Syllabus"><label for="msy4">State Syllabus</label></div>
+      </div>
+    </div>
+    <div class="mfield-row">
+      <div class="mfield">
+        <label>Teaching Mode</label>
+        <select id="m-mode">
+          <option value="Home visits &amp; Online">Home visits &amp; Online</option>
+          <option value="Home visits only">Home visits only</option>
+          <option value="Online only">Online only</option>
+        </select>
+      </div>
+      <div class="mfield" style="display:flex;align-items:center;gap:10px;padding-top:24px">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--light);font-weight:500">
+          <input type="checkbox" id="m-demo" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer">
+          Free Demo Class
+        </label>
       </div>
     </div>
     <div class="mfield-row">
@@ -1031,6 +1064,8 @@ async function saveTutor() {
     verified:  document.getElementById('m-verified').value === 'true',
     top_rated: document.getElementById('m-toprated').value === 'true',
     active:    document.getElementById('m-active').value === 'true',
+    mode:      document.getElementById('m-mode').value,
+    demo_class: document.getElementById('m-demo').checked,
     subjects, classes, syllabus
   };
 
@@ -1139,7 +1174,9 @@ async function approveReg(id) {
     syllabus: reg.syllabus || [],
     av_class: reg.av_class || 'av1',
     verified: false, top_rated: false, active: true, rating: 0,
-    password: reg.password || String(reg.phone).replace(/\D/g,'').slice(-4)
+    password: reg.password || String(reg.phone).replace(/\D/g,'').slice(-4),
+    mode: reg.mode || 'Home visits & Online',
+    demo_class: reg.demo_class || false
   });
   if (!ok2) { toast('Failed to create tutor profile.'); return; }
   toast(reg.name + ' approved and published!');
@@ -1182,6 +1219,8 @@ function openRegModal(id) {
   document.getElementById('rm-qual').value = r.qual || '';
   document.getElementById('rm-edu').value  = r.edu  || '';
   document.getElementById('rm-bio').value  = r.bio  || '';
+  if(document.getElementById('rm-mode')) document.getElementById('rm-mode').value = r.mode || 'Home visits & Online';
+  if(document.getElementById('rm-demo')) document.getElementById('rm-demo').checked = r.demo_class || false;
 
   // Areas
   const areas = r.areas || (r.area ? [r.area] : []);
@@ -1224,7 +1263,9 @@ async function saveRegEdits() {
     edu:      document.getElementById('rm-edu').value.trim(),
     bio:      document.getElementById('rm-bio').value.trim(),
     area:     areas[0] || '',
-    areas, subjects, classes, syllabus
+    areas, subjects, classes, syllabus,
+    mode: (document.getElementById('rm-mode') ? document.getElementById('rm-mode').value : null),
+    demo_class: document.getElementById('rm-demo') ? document.getElementById('rm-demo').checked : false
   };
   const ok = await sbPatch('registrations', _currentRegId, row);
   if (ok) {
@@ -1369,6 +1410,8 @@ function openEditTutor(id) {
   document.getElementById('m-exp').value = (t.exp||'').replace(' years','');
   document.getElementById('m-rating').value = t.rating || '';
   document.getElementById('m-qual').value = t.qual || '';
+  document.getElementById('m-mode').value = t.mode || 'Home visits & Online';
+  document.getElementById('m-demo').checked = t.demo_class || false;
   document.getElementById('m-edu').value = t.edu || '';
   document.getElementById('m-bio').value = t.bio || '';
   document.getElementById('m-avclass').value = t.av_class || 'av1';

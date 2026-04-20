@@ -119,11 +119,28 @@
       <div class="field-row">
         <div class="field">
           <label>WhatsApp Number *</label>
-          <input type="tel" id="r-phone" placeholder="91XXXXXXXXXX">
+          <input type="tel" id="r-phone" placeholder="10-digit mobile number" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
         </div>
         <div class="field">
           <label>Email Address</label>
           <input type="email" id="r-email" placeholder="your@email.com">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Teaching Mode *</label>
+          <select id="r-mode">
+            <option value="">Select mode</option>
+            <option value="Home visits only">Home visits only</option>
+            <option value="Online only">Online only</option>
+            <option value="Home visits &amp; Online">Home visits &amp; Online</option>
+          </select>
+        </div>
+        <div class="field" style="display:flex;align-items:center;gap:12px;padding-top:28px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:500;color:var(--light)">
+            <input type="checkbox" id="r-demo" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer">
+            Offers Free Demo Class
+          </label>
         </div>
       </div>
       <div class="field">
@@ -210,7 +227,7 @@
             <option value="">Select qualification</option>
             <option>B.Ed</option><option>M.Ed</option><option>B.Sc</option>
             <option>M.Sc</option><option>B.Tech</option><option>M.Tech</option>
-            <option>BA</option><option>MA</option><option>PhD</option><option>Other</option>
+            <option>BA</option><option>MA</option><option>BBA</option><option>MBA</option><option>BCA</option><option>MCA</option><option>PhD</option><option>Other</option>
           </select>
         </div>
         <div class="field">
@@ -274,7 +291,7 @@ function handlePhotoUpload(input) {
 
 async function submitRegistration() {
   const name  = document.getElementById('r-name').value.trim();
-  const phone = document.getElementById('r-phone').value.trim();
+  const phone = document.getElementById('r-phone').value.trim().replace(/\D/g,'');
   const exp   = document.getElementById('r-exp').value;
   const qual  = document.getElementById('r-qual').value;
   const age   = document.getElementById('r-age').value;
@@ -286,8 +303,13 @@ async function submitRegistration() {
   const syllabus = [...document.querySelectorAll('[id^=sl]:checked')].map(c=>c.value);
 
   const bio = document.getElementById('r-bio').value.trim();
-  if (!name||!phone||!areas.length||!exp||!qual||!bio||!subjects.length||!classes.length||!syllabus.length) {
+  const mode = document.getElementById('r-mode').value;
+  if (!name||!phone||!areas.length||!exp||!qual||!bio||!mode||!subjects.length||!classes.length||!syllabus.length) {
     alert('Please fill all required fields. About You is mandatory — parents read this to decide!'); return;
+  }
+  if (phone.length !== 10) {
+    alert('Please enter a valid 10-digit mobile number (without country code).');
+    document.getElementById('r-phone').focus(); return;
   }
   if (password && password.length < 6) {
     alert('Password must be at least 6 characters.'); return;
@@ -305,6 +327,8 @@ async function submitRegistration() {
     areas: areas, area: areas[0] || '', exp: exp+' years', qual,
     age: age ? parseInt(age) : null,
     edu: document.getElementById('r-edu').value || null,
+    mode: document.getElementById('r-mode').value || 'Home visits & Online',
+    demo_class: document.getElementById('r-demo').checked,
     bio: bio || null,
     photo_url: uploadedPhotoUrl || null,
     subjects, classes, syllabus,

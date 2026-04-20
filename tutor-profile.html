@@ -125,7 +125,8 @@ async function loadProfile(){
             (t.exp?'<div class="info-row">&#9203; <span>'+t.exp+'</span></div>':'')+
             (t.qual?'<div class="info-row">&#127891; <span>'+t.qual+'</span></div>':'')+
             (t.edu?'<div class="info-row">&#127979; <span>'+t.edu+'</span></div>':'')+
-            '<div class="info-row">&#127968; <span>Home visits &middot; Online</span></div>'+
+            '<div class="info-row">&#127968; <span>'+(t.mode||'Home visits &middot; Online')+'</span></div>'+
+            (t.demo_class?'<div class="info-row">&#10003; <span style="color:#00c9a7;font-weight:600">Free Demo Class Available</span></div>':'')+
           '</div>'+
         '</div>'+
         (areaHtml?'<div class="section"><div class="sec-label">Areas Covered</div><div class="tags">'+areaHtml+'</div></div>':'')+

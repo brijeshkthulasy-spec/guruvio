@@ -583,6 +583,8 @@ async function loadTutors() {
         areas: t.areas || (t.area ? [t.area] : []),
         syllabus: t.syllabus || [],
         verified: t.verified, active: t.active, rating: t.rating || 0,
+        mode: t.mode || 'Home visits & Online',
+        demoClass: t.demo_class || false,
         avatar: (t.name || 'T')[0].toUpperCase(),
         avClass: t.av_class || 'av1'
       };
@@ -671,8 +673,9 @@ function renderCard(t) {
     '<div class="card-tags">' + subjectHtml + '</div>' +
     '<div class="card-tags">' + classHtml + '</div>' +
     '<div class="card-tags">' + syllabusHtml + '</div>' +
+    (t.demoClass ? '<div class="card-tags"><span style="background:rgba(0,201,167,0.1);border:1px solid rgba(0,201,167,0.3);border-radius:6px;padding:3px 10px;font-size:11px;color:#00c9a7;font-weight:600">&#10003; Free Demo</span></div>' : '') +
     '<div class="card-spacer"></div>' +
-    '<div class="card-footer"><div class="tutor-meta">&#127968; Home &amp; Online</div></div>' +
+    '<div class="card-footer"><div class="tutor-meta">&#127968; ' + (t.mode || 'Home &amp; Online') + '</div></div>' +
     '<button type="button" class="view-profile-btn" onclick="openProfile(' + t.id + ')">' +
       '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
       ' View Full Profile' +
@@ -805,7 +808,8 @@ function openProfile(tutorId) {
     (t.exp  ? '<div>&#9203; <span style="color:#f7f4ee">' + t.exp + '</span></div>' : '') +
     (t.qual ? '<div>&#127891; <span style="color:#f7f4ee">' + t.qual + '</span></div>' : '') +
     (t.edu  ? '<div>&#127979; <span style="color:#f7f4ee">' + t.edu  + '</span></div>' : '') +
-    '<div>&#127968; <span style="color:#f7f4ee">Home visits &middot; Online</span></div>' +
+    '<div>&#127968; <span style="color:#f7f4ee">' + (t.mode || 'Home visits &middot; Online') + '</span></div>' +
+    (t.demoClass ? '<div>&#10003; <span style="color:#00c9a7;font-weight:600">Free Demo Class Available</span></div>' : '') +
     '</div>';
 
   var html =
