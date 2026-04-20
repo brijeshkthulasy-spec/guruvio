@@ -710,9 +710,9 @@ async function sbGet(table, query) {
   try {
     const r = await fetch(url, { headers: SB_H });
     const txt = await r.text();
-    if (!r.ok) { console.error('sbGet error', r.status, txt); return []; }
+    if (!r.ok) {  return []; }
     return txt ? JSON.parse(txt) : [];
-  } catch(e) { console.error('sbGet failed', e); return []; }
+  } catch(e) {  return []; }
 }
 
 async function sbPost(table, data) {
@@ -723,9 +723,9 @@ async function sbPost(table, data) {
       headers: { ...SB_H, 'Prefer': 'return=minimal' },
       body: JSON.stringify(data)
     });
-    if (!r.ok) { const t = await r.text(); console.error('sbPost error', r.status, t); }
+    if (!r.ok) { const t = await r.text();  }
     return r.ok;
-  } catch(e) { console.error('sbPost failed', e); return false; }
+  } catch(e) {  return false; }
 }
 
 async function sbPatch(table, id, data) {
@@ -736,9 +736,9 @@ async function sbPatch(table, id, data) {
       headers: { ...SB_H, 'Prefer': 'return=minimal' },
       body: JSON.stringify(data)
     });
-    if (!r.ok) { const t = await r.text(); console.error('sbPatch error', r.status, t); }
+    if (!r.ok) { const t = await r.text();  }
     return r.ok;
-  } catch(e) { console.error('sbPatch failed', e); return false; }
+  } catch(e) {  return false; }
 }
 
 async function sbDelete(table, id) {
@@ -749,7 +749,7 @@ async function sbDelete(table, id) {
       headers: { ...SB_H, 'Prefer': 'return=minimal' }
     });
     return r.ok;
-  } catch(e) { console.error('sbDelete failed', e); return false; }
+  } catch(e) {  return false; }
 }
 
 async function sbPatchQuery(table, query, data) {
@@ -760,9 +760,9 @@ async function sbPatchQuery(table, query, data) {
       headers: { ...SB_H, 'Prefer': 'return=minimal' },
       body: JSON.stringify(data)
     });
-    if (!r.ok) { const t = await r.text(); console.error('sbPatchQuery error', r.status, t); }
+    if (!r.ok) { const t = await r.text();  }
     return r.ok;
-  } catch(e) { console.error('sbPatchQuery failed', e); return false; }
+  } catch(e) {  return false; }
 }
 
 // ============================================
@@ -1045,6 +1045,11 @@ async function saveTutor() {
 }
 
 var ID_SECRET=3721;
+function maskDisplayPhone(phone){
+  var p=String(phone||'').replace(/\D/g,'');
+  if(p.length<4) return '••••••••••';
+  return '••••••' + p.slice(-4);
+}
 function encodeId(id){var xored=parseInt(id)^ID_SECRET;return btoa(String(xored)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');}
 function safePhotoUrl(url){if(!url)return null;if(url.startsWith('data:image/')||url.startsWith('https://')||url.startsWith('http://'))return url;return null;}
 
@@ -1092,7 +1097,7 @@ async function loadRegsPage() {
       : '<span style="display:inline-flex;width:28px;height:28px;border-radius:7px;background:var(--card2);align-items:center;justify-content:center;font-weight:700;font-size:12px;vertical-align:middle;margin-right:7px">' + (r.name||'?')[0] + '</span>';
     return '<tr>' +
       '<td>' + av + '<strong>' + r.name + '</strong></td>' +
-      '<td>' + r.phone + '</td>' +
+      '<td>' + maskDisplayPhone(r.phone) + '</td>' +
       '<td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (r.subjects||[]).join(', ') + '</td>' +
       '<td>' + (r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : '—') + '</td>' +
       '<td><button class="action-btn" onclick="openRegModal(' + r.id + ')">👁 View</button></td>' +

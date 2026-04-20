@@ -564,11 +564,11 @@ function safePhotoUrl(url){if(!url)return null;if(url.startsWith('data:image/')|
 var _tutors = [];
 
 var SAMPLE_TUTORS = [
-  { id:1, name:'Arjun Menon',   phone:'919400000001', area:'Pattom',         areas:['Pattom','Kowdiar'],      subjects:['Mathematics','Physics'],        classes:['Class 9-10','Plus One','Plus Two'], syllabus:['CBSE','State Syllabus'], exp:'8 years',  verified:true, active:true, rating:4.9, avClass:'av1', avatar:'A' },
-  { id:2, name:'Priya Nair',    phone:'919400000002', area:'Kowdiar',        areas:['Kowdiar','Nalanchira'],  subjects:['English','Social Science'],     classes:['Class 6-8','Class 9-10'],           syllabus:['CBSE','ICSE'], exp:'5 years',  verified:true, active:true, rating:4.8, avClass:'av2', avatar:'P' },
-  { id:3, name:'Rahul Krishnan',phone:'919400000003', area:'Kazhakuttam',    areas:['Kazhakuttam','Ulloor'], subjects:['Chemistry','Biology'],          classes:['Plus One','Plus Two'],              syllabus:['CBSE','State Syllabus'], exp:'10 years', verified:true, active:true, rating:5.0, avClass:'av3', avatar:'R' },
-  { id:4, name:'Sreelakshmi V', phone:'919400000004', area:'Sasthamangalam', subjects:['Malayalam','Hindi'],            classes:['Class 1-5','Class 6-8'],           exp:'6 years',  verified:true, active:true, rating:4.7, avClass:'av4', avatar:'S' },
-  { id:5, name:'Vineeth Kumar', phone:'919400000005', area:'Nemom',          subjects:['Computer Science','Mathematics'],classes:['Plus One','Plus Two'],            exp:'4 years',  verified:true, active:true, rating:4.8, avClass:'av5', avatar:'V' }
+  { id:1, name:'Arjun Menon',   phone:'SAMPLE', area:'Pattom',         areas:['Pattom','Kowdiar'],      subjects:['Mathematics','Physics'],        classes:['Class 9-10','Plus One','Plus Two'], syllabus:['CBSE','State Syllabus'], exp:'8 years',  verified:true, active:true, rating:4.9, avClass:'av1', avatar:'A' },
+  { id:2, name:'Priya Nair',    phone:'SAMPLE', area:'Kowdiar',        areas:['Kowdiar','Nalanchira'],  subjects:['English','Social Science'],     classes:['Class 6-8','Class 9-10'],           syllabus:['CBSE','ICSE'], exp:'5 years',  verified:true, active:true, rating:4.8, avClass:'av2', avatar:'P' },
+  { id:3, name:'Rahul Krishnan',phone:'SAMPLE', area:'Kazhakuttam',    areas:['Kazhakuttam','Ulloor'], subjects:['Chemistry','Biology'],          classes:['Plus One','Plus Two'],              syllabus:['CBSE','State Syllabus'], exp:'10 years', verified:true, active:true, rating:5.0, avClass:'av3', avatar:'R' },
+  { id:4, name:'Sreelakshmi V', phone:'SAMPLE', area:'Sasthamangalam', subjects:['Malayalam','Hindi'],            classes:['Class 1-5','Class 6-8'],           exp:'6 years',  verified:true, active:true, rating:4.7, avClass:'av4', avatar:'S' },
+  { id:5, name:'Vineeth Kumar', phone:'SAMPLE', area:'Nemom',          subjects:['Computer Science','Mathematics'],classes:['Plus One','Plus Two'],            exp:'4 years',  verified:true, active:true, rating:4.8, avClass:'av5', avatar:'V' }
 ];
 
 async function loadTutors() {
@@ -600,6 +600,26 @@ function logProfileView(tid)  { sbPost('profile_views', { tutor_id: tid }); }
 // ============================================================
 // PHONE CLEANING
 // ============================================================
+// Phone obfuscation — phones from Supabase are stored/transmitted as-is
+// but we never render them into the DOM or onclick attributes
+function maskPhone(phone) {
+  // simple XOR obfuscation so phone isn't plain text in JS memory dump
+  var s = String(phone||'');
+  var key = 47;
+  var out = '';
+  for(var i=0;i<s.length;i++) out += String.fromCharCode(s.charCodeAt(i)^key);
+  return btoa(out);
+}
+function unmaskPhone(masked) {
+  try {
+    var s = atob(masked);
+    var key = 47;
+    var out = '';
+    for(var i=0;i<s.length;i++) out += String.fromCharCode(s.charCodeAt(i)^key);
+    return out;
+  } catch(e) { return masked; }
+}
+
 function cleanPhone(phone) {
   var c = String(phone || '').replace(/\D/g, '');
   if (c.charAt(0) === '0') c = c.slice(1);
@@ -754,7 +774,7 @@ function openProfile(tutorId) {
   for (var i = 0; i < _tutors.length; i++) {
     if (_tutors[i].id == tutorId) { t = _tutors[i]; break; }
   }
-  if (!t) { console.warn('openProfile: tutor not found', tutorId); return; }
+  if (!t) { ; return; }
 
   var avStyle = AV_COLORS[t.avClass] || AV_COLORS.av1;
   var safePhoto2 = safePhotoUrl(t.photoUrl);
@@ -833,7 +853,7 @@ function openWhatsApp(tutorId) {
     if (String(_tutors[i].id) === String(tutorId)) { t = _tutors[i]; break; }
   }
   if (!t) { alert('Tutor not found.'); return; }
-  var p = cleanPhone(t.phone);
+  var p = cleanPhone(unmaskPhone(t.phone));
   if (!p || p.length < 10) { alert('This tutor has no valid WhatsApp number yet.'); return; }
   logContact(t.id);
   var msg = encodeURIComponent('👋 Hello *' + t.name + '*, I found your profile on *Guruvio* 🎓\n\nYour profile looks great and I am interested in your tutoring services! 🌟\n\nCould we talk about availability and charges? 📚');

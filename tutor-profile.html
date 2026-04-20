@@ -70,14 +70,16 @@ var AV_COLORS={av1:'linear-gradient(135deg,#f5a623,#e05c2a)',av2:'linear-gradien
 
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2500)}
 
+function maskPhone(phone){var s=String(phone||'');var key=47;var out='';for(var i=0;i<s.length;i++)out+=String.fromCharCode(s.charCodeAt(i)^key);return btoa(out);}
+function unmaskPhone(masked){try{var s=atob(masked);var key=47;var out='';for(var i=0;i<s.length;i++)out+=String.fromCharCode(s.charCodeAt(i)^key);return out;}catch(e){return masked;}}
 function cleanPhone(phone){var c=String(phone||'').replace(/\D/g,'');if(c.charAt(0)==='0')c=c.slice(1);if(c.length===10)c='91'+c;return c}
 
-function openWhatsApp(phone,name){var p=cleanPhone(phone);if(!p||p.length<10){alert('No valid WhatsApp number for this tutor.');return}var msg=encodeURIComponent('\u{1F44B} Hello *'+name+'*, I found your profile on *Guruvio* \u{1F393}\n\nYour profile looks great and I am interested in your tutoring services! \u{1F31F}\n\nCould we talk about availability and charges? \u{1F4DA}');window.location.href='https://wa.me/'+p+'?text='+msg}
+
 
 var _profileTutor = null;
 function openWhatsAppById(){
   if(!_profileTutor) return;
-  var p=cleanPhone(_profileTutor.phone);
+  var p=cleanPhone(unmaskPhone(_profileTutor.phone));
   if(!p||p.length<10){alert('No valid WhatsApp number.');return}
   var msg=encodeURIComponent('\u{1F44B} Hello *'+_profileTutor.name+'*, I found your profile on *Guruvio* \u{1F393}\n\nYour profile looks great and I am interested in your tutoring services! \u{1F31F}\n\nCould we talk about availability and charges? \u{1F4DA}');
   window.location.href='https://wa.me/'+p+'?text='+msg;
@@ -102,7 +104,7 @@ async function loadProfile(){
     var r=await fetch(SUPA_URL+'/rest/v1/tutors?id=eq.'+id+'&active=eq.true',{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
     var data=await r.json();
     if(!data||!data.length){content.innerHTML='<div class="loading">Tutor profile not found.</div>';return}
-    var t=data[0]; _profileTutor=t;
+    t.phone=maskPhone(t.phone||''); var t=data[0]; _profileTutor=t;
     document.title=(t.name||'Tutor')+' — Guruvio';
     var avStyle=AV_COLORS[t.av_class||'av1']||AV_COLORS.av1;
     var safePhoto=safePhotoUrl(t.photo_url);var photoHtml=safePhoto?'<img src="'+safePhoto+'" style="width:100%;height:100%;object-fit:cover;border-radius:16px">':'<span style="font-size:40px;font-weight:700;color:#fff">'+(t.name||'T')[0].toUpperCase()+'</span>';

@@ -816,7 +816,11 @@ function loadOptimise(tutor) {
 
 // ---- TABS ----
 var ID_SECRET=3721;
+function safePhotoUrl(url){if(!url)return null;if(url.startsWith('data:image/')||url.startsWith('https://')||url.startsWith('http://'))return url;return null;}
 function encodeId(id){var xored=parseInt(id)^ID_SECRET;return btoa(String(xored)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');}
+
+function maskPhone(phone){var s=String(phone||'');var key=47;var out='';for(var i=0;i<s.length;i++)out+=String.fromCharCode(s.charCodeAt(i)^key);return btoa(out);}
+function unmaskPhone(masked){try{var s=atob(masked);var key=47;var out='';for(var i=0;i<s.length;i++)out+=String.fromCharCode(s.charCodeAt(i)^key);return out;}catch(e){return masked;}}
 
 function copyProfileLink() {
   if (!currentTutor) return;
