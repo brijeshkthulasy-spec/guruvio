@@ -550,7 +550,25 @@
           <div class="bar-chart" id="traffic-chart"></div>
         </div>
       </div>
-      <div class="table-wrap">
+
+      <!-- WA ANALYTICS PER TUTOR -->
+      <div class="table-wrap" style="margin-top:24px">
+        <div class="table-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <h3>WhatsApp Clicks — Per Tutor</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="filterWA('day')"   id="wa-btn-day"   class="action-btn" style="font-size:12px;padding:6px 14px">Today</button>
+            <button onclick="filterWA('week')"  id="wa-btn-week"  class="action-btn" style="font-size:12px;padding:6px 14px">This Week</button>
+            <button onclick="filterWA('month')" id="wa-btn-month" class="action-btn" style="font-size:12px;padding:6px 14px">This Month</button>
+            <button onclick="filterWA('all')"   id="wa-btn-all"   class="action-btn success" style="font-size:12px;padding:6px 14px">All Time</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>#</th><th>Tutor</th><th>WhatsApp Clicks</th><th>Last Click</th></tr></thead>
+          <tbody id="wa-tbody"><tr><td colspan="5" style="color:var(--muted);padding:20px">Loading...</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="table-wrap" style="margin-top:24px">
         <div class="table-header"><h3>Recent Activity</h3></div>
         <table>
           <thead><tr><th>Time</th><th>Event</th><th>Details</th></tr></thead>
@@ -1475,18 +1493,92 @@ async function deleteTutor(id) {
 // ============================================
 // TRAFFIC
 // ============================================
+let _allContacts = [];
+let _waCurrentFilter = 'all';
+
 async function loadTrafficPage() {
-  const [visits, contacts] = await Promise.all([
-    sbGet('visits', 'order=visited_at.desc&limit=500'),
-    sbGet('contacts', 'order=contacted_at.desc&limit=200')
+  const [visits, contacts, tutors] = await Promise.all([
+    sbGet('visits',   'order=visited_at.desc&limit=500'),
+    sbGet('contacts', 'order=contacted_at.desc&limit=2000'),
+    sbGet('tutors',   'select=id,name,areas,area,active&order=sort_order.asc.nullslast,id.asc')
   ]);
-  const today = new Date().toISOString().split('T')[0];
+  const today   = new Date().toISOString().split('T')[0];
   const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
   document.getElementById('t-today').textContent    = visits.filter(v=>(v.visited_at||'').startsWith(today)).length;
   document.getElementById('t-week').textContent     = visits.filter(v=>new Date(v.visited_at)>=weekAgo).length;
   document.getElementById('t-total').textContent    = visits.length;
   document.getElementById('t-contacts').textContent = contacts.length;
   renderVisitChart(visits);
+
+  _allContacts = contacts;
+  _waTutors    = tutors;
+  renderWATable('all');
+}
+
+let _waTutors = [];
+
+function filterWA(period) {
+  _waCurrentFilter = period;
+  ['day','week','month','all'].forEach(p => {
+    var btn = document.getElementById('wa-btn-'+p);
+    if (btn) btn.className = 'action-btn' + (p === period ? ' success' : '');
+  });
+  renderWATable(period);
+}
+
+function renderWATable(period) {
+  var now     = new Date();
+  var todayStr = now.toISOString().split('T')[0];
+  var weekAgo  = new Date(now); weekAgo.setDate(weekAgo.getDate()-7);
+  var monthAgo = new Date(now); monthAgo.setMonth(monthAgo.getMonth()-1);
+
+  var filtered = _allContacts.filter(function(c) {
+    var d = new Date(c.contacted_at || c.created_at || 0);
+    if (period === 'day')   return (c.contacted_at||'').startsWith(todayStr);
+    if (period === 'week')  return d >= weekAgo;
+    if (period === 'month') return d >= monthAgo;
+    return true;
+  });
+
+  // Count per tutor
+  var counts = {};
+  var lastClick = {};
+  filtered.forEach(function(c) {
+    if (!c.tutor_id) return;
+    counts[c.tutor_id]    = (counts[c.tutor_id] || 0) + 1;
+    var ts = c.contacted_at || c.created_at || '';
+    if (!lastClick[c.tutor_id] || ts > lastClick[c.tutor_id]) lastClick[c.tutor_id] = ts;
+  });
+
+  // Build rows — include all tutors, sorted by click count desc
+  var rows = _waTutors.map(function(t) {
+    return { t: t, count: counts[t.id] || 0, last: lastClick[t.id] || null };
+  }).sort(function(a,b){ return b.count - a.count; });
+
+  var tbody = document.getElementById('wa-tbody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);padding:20px">No data yet.</td></tr>';
+    return;
+  }
+
+  var periodLabel = {day:'Today',week:'This Week',month:'This Month',all:'All Time'}[period];
+  tbody.innerHTML = rows.map(function(row, i) {
+    var t    = row.t;
+    var area = (t.areas && t.areas[0]) || t.area || '—';
+    var last = row.last ? new Date(row.last).toLocaleDateString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+    var bar  = row.count > 0
+      ? '<div style="display:inline-block;background:rgba(0,201,167,0.15);border-radius:4px;padding:3px 10px;font-size:13px;font-weight:700;color:#00c9a7;min-width:32px;text-align:center">' + row.count + '</div>'
+      : '<span style="color:var(--muted);font-size:13px">0</span>';
+    var activeD = t.active
+      ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#00c9a7;margin-right:6px;vertical-align:middle"></span>'
+      : '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#555;margin-right:6px;vertical-align:middle"></span>';
+    return '<tr>' +
+      '<td style="color:var(--muted);font-size:12px">' + (i+1) + '</td>' +
+      '<td>' + activeD + '<strong>' + t.name + '</strong></td>' +
+      '<td>' + bar + '</td>' +
+      '<td style="font-size:12px;color:var(--muted)">' + last + '</td>' +
+      '</tr>';
+  }).join('');
 }
 
 // ============================================
