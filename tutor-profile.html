@@ -101,10 +101,12 @@ async function loadProfile(){
   var content=document.getElementById('content');
   if(!id){content.innerHTML='<div class="loading" style="color:#e05c2a">Invalid or expired profile link.</div>';return}
   try{
-    var r=await fetch(SUPA_URL+'/rest/v1/tutors?id=eq.'+id+'&active=eq.true',{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+    var r=await fetch(SUPA_URL+'/rest/v1/tutors?id=eq.'+id,{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
     var data=await r.json();
     if(!data||!data.length){content.innerHTML='<div class="loading">Tutor profile not found.</div>';return}
-    t.phone=maskPhone(t.phone||''); var t=data[0]; _profileTutor=t;
+    var t=data[0];
+    t.phone=maskPhone(t.phone||'');
+    _profileTutor=t;
     document.title=(t.name||'Tutor')+' — Guruvio';
     var avStyle=AV_COLORS[t.av_class||'av1']||AV_COLORS.av1;
     var safePhoto=safePhotoUrl(t.photo_url);var photoHtml=safePhoto?'<img src="'+safePhoto+'" style="width:100%;height:100%;object-fit:cover;object-position:center top;border-radius:16px">':'<span style="font-size:40px;font-weight:700;color:#fff">'+(t.name||'T')[0].toUpperCase()+'</span>';
