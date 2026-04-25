@@ -208,12 +208,12 @@
   }
   .card-top { display:flex; align-items:center; gap:14px; margin-bottom:16px; }
   .avatar {
-    width:52px; height:52px; border-radius:14px;
+    width:60px; height:60px; border-radius:14px;
     display:flex; align-items:center; justify-content:center;
-    font-size:20px; font-weight:700; font-family:'Playfair Display',serif; flex-shrink:0;
-    overflow:hidden;
+    font-size:22px; font-weight:700; font-family:'Playfair Display',serif; flex-shrink:0;
+    overflow:hidden; background-size:cover; background-position:center;
   }
-  .avatar img { width:100%; height:100%; object-fit:cover; border-radius:14px; }
+  .avatar img { width:100%; height:100%; object-fit:cover; object-position:center top; border-radius:14px; }
 
   /* ---- PROFILE MODAL ---- */
 
@@ -782,7 +782,7 @@ function openProfile(tutorId) {
   var avStyle = AV_COLORS[t.avClass] || AV_COLORS.av1;
   var safePhoto2 = safePhotoUrl(t.photoUrl);
   var photoHtml = safePhoto2
-    ? '<img src="' + safePhoto2 + '" style="width:100%;height:100%;object-fit:cover;border-radius:16px">'
+    ? '<img src="' + safePhoto2 + '" style="width:100%;height:100%;object-fit:cover;object-position:center top;border-radius:14px">'
     : '<span style="font-size:26px;font-weight:700;color:#fff">' + t.avatar + '</span>';
 
   var rows = '';
@@ -822,7 +822,7 @@ function openProfile(tutorId) {
     '<div style="padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:16px" class="popup-grid">' +
       // Left column — photo + info
       '<div>' +
-        '<div style="width:100%;aspect-ratio:1;border-radius:14px;' + avStyle + ';display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:12px;max-height:140px">' + photoHtml + '</div>' +
+        '<div style="width:100%;aspect-ratio:1/1;border-radius:14px;' + avStyle + ';display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:12px">' + photoHtml + '</div>' +
         infoHtml +
       '</div>' +
       // Right column — tags
