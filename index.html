@@ -560,12 +560,13 @@ async function sbGet(path) {
 
 async function sbPost(table, data) {
   try {
-    await fetch(SUPA_URL + '/rest/v1/' + table, {
+    var r = await fetch(SUPA_URL + '/rest/v1/' + table, {
       method: 'POST',
       headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify(data)
     });
-  } catch(e) {}
+    return r.ok;
+  } catch(e) { return false; }
 }
 
 // ============================================================
@@ -637,21 +638,32 @@ async function submitContactForm() {
   var btn = document.getElementById('cm-submit-btn');
   btn.textContent = 'Sending...';
   btn.disabled = true;
-  try {
-    await sbPost('enquiries', {
-      name: name,
-      contact: contact,
-      message: message,
-      submitted_at: new Date().toISOString(),
-      status: 'new'
-    });
+
+  // 8 second timeout
+  var timer = setTimeout(function() {
+    btn.textContent = 'Send Message';
+    btn.disabled = false;
+    alert('Request timed out. Please check your connection and try again.');
+  }, 8000);
+
+  var ok = await sbPost('enquiries', {
+    name: name,
+    contact: contact,
+    message: message,
+    submitted_at: new Date().toISOString(),
+    status: 'new'
+  });
+
+  clearTimeout(timer);
+
+  if (ok) {
     btn.style.display = 'none';
     document.getElementById('cm-success').style.display = 'block';
     setTimeout(closeContactModal, 3000);
-  } catch(e) {
+  } else {
     btn.textContent = 'Send Message';
     btn.disabled = false;
-    alert('Failed to send. Please try again.');
+    alert('Could not send message. The enquiries table may not be set up yet in Supabase. Please run the SQL first.');
   }
 }
 
