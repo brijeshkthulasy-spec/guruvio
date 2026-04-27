@@ -534,7 +534,7 @@
   <p>© 2025 Guruvio · Trivandrum's Tutor Platform</p>
   <div class="footer-links">
     <a href="#">About</a>
-    <a href="#">Contact</a>
+    <a href="#" onclick="openContactModal();return false;">Contact</a>
     <a href="tutor-register.html">For Tutors</a>
     <a href="terms.html">Terms &amp; Conditions</a>
   </div>
@@ -614,6 +614,47 @@ async function loadTutors() {
 
 function logVisit()           { sbPost('visits',        { page: 'home' }); }
 function logContact(tid)      { sbPost('contacts',      { tutor_id: tid }); }
+function openContactModal() {
+  document.getElementById('contact-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  document.getElementById('cm-success').style.display = 'none';
+  document.getElementById('cm-submit-btn').style.display = 'block';
+  document.getElementById('cm-name').value = '';
+  document.getElementById('cm-contact').value = '';
+  document.getElementById('cm-message').value = '';
+}
+function closeContactModal() {
+  document.getElementById('contact-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+async function submitContactForm() {
+  var name    = document.getElementById('cm-name').value.trim();
+  var contact = document.getElementById('cm-contact').value.trim();
+  var message = document.getElementById('cm-message').value.trim();
+  if (!name)    { alert('Please enter your name.'); return; }
+  if (!contact) { alert('Please enter your phone number or email.'); return; }
+  if (!message) { alert('Please enter your message.'); return; }
+  var btn = document.getElementById('cm-submit-btn');
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+  try {
+    await sbPost('enquiries', {
+      name: name,
+      contact: contact,
+      message: message,
+      submitted_at: new Date().toISOString(),
+      status: 'new'
+    });
+    btn.style.display = 'none';
+    document.getElementById('cm-success').style.display = 'block';
+    setTimeout(closeContactModal, 3000);
+  } catch(e) {
+    btn.textContent = 'Send Message';
+    btn.disabled = false;
+    alert('Failed to send. Please try again.');
+  }
+}
+
 function logProfileView(tid)  { sbPost('profile_views', { tutor_id: tid }); }
 
 // ============================================================
@@ -960,5 +1001,36 @@ loadTutors().then(function(tutors) {
   renderTutors(tutors);
 });
 </script>
+<!-- CONTACT MODAL -->
+<div id="contact-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeContactModal()">
+  <div onclick="event.stopPropagation()" style="background:#12121f;border:1px solid rgba(255,255,255,0.09);border-radius:20px;width:100%;max-width:460px;position:relative;overflow:hidden">
+    <!-- Header -->
+    <div style="padding:20px 24px 16px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:18px;font-weight:600;color:#f7f4ee;margin-bottom:2px">Contact Us</div>
+        <div style="font-size:12px;color:#9090a8">We will get back to you as soon as possible</div>
+      </div>
+      <button onclick="closeContactModal()" style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;cursor:pointer;color:#f7f4ee;font-size:18px;display:flex;align-items:center;justify-content:center;line-height:1">&#215;</button>
+    </div>
+    <!-- Form -->
+    <div style="padding:22px 24px 24px">
+      <div style="margin-bottom:14px">
+        <label style="font-size:11px;color:#9090a8;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;font-weight:600">Your Name *</label>
+        <input id="cm-name" type="text" placeholder="Enter your name" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 14px;font-size:14px;color:#f7f4ee;font-family:'DM Sans',sans-serif;outline:none">
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="font-size:11px;color:#9090a8;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;font-weight:600">Phone / Email *</label>
+        <input id="cm-contact" type="text" placeholder="Your WhatsApp number or email" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 14px;font-size:14px;color:#f7f4ee;font-family:'DM Sans',sans-serif;outline:none">
+      </div>
+      <div style="margin-bottom:20px">
+        <label style="font-size:11px;color:#9090a8;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;font-weight:600">Message *</label>
+        <textarea id="cm-message" rows="4" placeholder="How can we help you?" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:11px 14px;font-size:14px;color:#f7f4ee;font-family:'DM Sans',sans-serif;outline:none;resize:vertical"></textarea>
+      </div>
+      <button type="button" onclick="submitContactForm()" id="cm-submit-btn" style="width:100%;background:#f5a623;color:#0a0a14;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s">Send Message</button>
+      <div id="cm-success" style="display:none;text-align:center;padding:14px 0 0;font-size:14px;color:#00c9a7;font-weight:500">&#10003; Message sent! Our team will contact you soon.</div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
