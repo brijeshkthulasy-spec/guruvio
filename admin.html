@@ -1590,7 +1590,7 @@ let _waCurrentFilter = 'all';
 async function loadTrafficPage() {
   const [visits, contacts, tutors] = await Promise.all([
     sbGet('visits',   'order=visited_at.desc&limit=500'),
-    sbGet('contacts', 'order=contacted_at.desc&limit=2000'),
+    sbGet('contacts', 'select=*&order=contacted_at.desc.nullslast&limit=5000'),
     sbGet('tutors',   'select=id,name,areas,area,active&order=sort_order.asc.nullslast,id.asc')
   ]);
   const today   = new Date().toISOString().split('T')[0];
@@ -1624,8 +1624,9 @@ function renderWATable(period) {
   var monthAgo = new Date(now); monthAgo.setMonth(monthAgo.getMonth()-1);
 
   var filtered = _allContacts.filter(function(c) {
-    var d = new Date(c.contacted_at || c.created_at || 0);
-    if (period === 'day')   return (c.contacted_at||'').startsWith(todayStr);
+    var ts = c.contacted_at || c.created_at || '';
+    var d = new Date(ts);
+    if (period === 'day')   return ts.startsWith(todayStr);
     if (period === 'week')  return d >= weekAgo;
     if (period === 'month') return d >= monthAgo;
     return true;

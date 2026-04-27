@@ -614,7 +614,7 @@ async function loadTutors() {
 }
 
 function logVisit()           { sbPost('visits',        { page: 'home' }); }
-function logContact(tid)      { sbPost('contacts',      { tutor_id: tid }); }
+function logContact(tid) { sbPost('contacts', { tutor_id: tid, contacted_at: new Date().toISOString() }); }
 function openContactModal() {
   document.getElementById('contact-modal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
