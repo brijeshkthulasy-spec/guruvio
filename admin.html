@@ -1358,7 +1358,18 @@ let _enquiries = [];
 async function loadEnquiriesPage() {
   const tbody = document.getElementById('enq-tbody');
   tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:20px">Loading...</td></tr>';
-  _enquiries = await sbGet('enquiries', 'order=submitted_at.desc');
+
+  // Fetch with explicit select to ensure all columns come through
+  _enquiries = await sbGet('enquiries', 'select=*&order=submitted_at.desc');
+
+  if (!_enquiries || !_enquiries.length) {
+    const newCount = 0;
+    const badge = document.getElementById('enq-badge');
+    if (badge) { badge.style.display = 'none'; }
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No enquiries yet. Make sure the table exists in Supabase and RLS policies allow select.</td></tr>';
+    return;
+  }
+
   const newCount = _enquiries.filter(e => e.status === 'new').length;
   const badge = document.getElementById('enq-badge');
   if (badge) { badge.textContent = newCount; badge.style.display = newCount > 0 ? 'inline' : 'none'; }
