@@ -788,7 +788,8 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const SB_H = {
   'apikey': SUPA_KEY,
   'Authorization': 'Bearer ' + SUPA_KEY,
-  'Content-Type': 'application/json'
+  'Content-Type': 'application/json',
+  'Accept': 'application/json'
 };
 
 async function sbGet(table, query) {
@@ -796,9 +797,15 @@ async function sbGet(table, query) {
   try {
     const r = await fetch(url, { headers: SB_H });
     const txt = await r.text();
-    if (!r.ok) {  return []; }
+    if (!r.ok) {
+      console.warn('sbGet failed', table, r.status, txt.slice(0,200));
+      return [];
+    }
     return txt ? JSON.parse(txt) : [];
-  } catch(e) {  return []; }
+  } catch(e) {
+    console.warn('sbGet error', table, e.message);
+    return [];
+  }
 }
 
 async function sbPost(table, data) {
