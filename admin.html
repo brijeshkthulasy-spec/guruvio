@@ -1586,11 +1586,15 @@ let _allContacts = [];
 let _waCurrentFilter = 'all';
 
 async function loadTrafficPage() {
+  const tbody = document.getElementById('wa-tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);padding:20px">Loading...</td></tr>';
+
   const [visits, contacts, tutors] = await Promise.all([
     sbGet('visits',   'select=*&order=visited_at.desc&limit=2000'),
     sbGet('contacts', 'select=*&order=contacted_at.desc.nullslast&limit=5000'),
-    sbGet('tutors',   'select=id,name,areas,area,active&order=sort_order.asc.nullslast,id.asc')
+    sbGet('tutors',   'select=id,name,active&order=sort_order.asc.nullslast,id.asc&limit=500')
   ]);
+
   const today   = new Date().toISOString().split('T')[0];
   const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7);
   document.getElementById('t-today').textContent    = visits.filter(v=>(v.visited_at||'').startsWith(today)).length;
@@ -1599,8 +1603,14 @@ async function loadTrafficPage() {
   document.getElementById('t-contacts').textContent = contacts.length;
   renderVisitChart(visits);
 
-  _allContacts = contacts;
-  _waTutors    = tutors;
+  _allContacts = contacts || [];
+  _waTutors    = tutors  || [];
+
+  if (!_waTutors.length) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);padding:20px">Could not load tutors. Check Supabase RLS policies allow admin to read tutors.</td></tr>';
+    return;
+  }
+
   renderWATable('all');
 }
 
