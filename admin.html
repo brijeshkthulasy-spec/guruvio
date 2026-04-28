@@ -1587,7 +1587,7 @@ let _waCurrentFilter = 'all';
 
 async function loadTrafficPage() {
   const [visits, contacts, tutors] = await Promise.all([
-    sbGet('visits',   'order=visited_at.desc&limit=500'),
+    sbGet('visits',   'select=*&order=visited_at.desc&limit=2000'),
     sbGet('contacts', 'select=*&order=contacted_at.desc.nullslast&limit=5000'),
     sbGet('tutors',   'select=id,name,areas,area,active&order=sort_order.asc.nullslast,id.asc')
   ]);

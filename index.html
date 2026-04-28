@@ -613,7 +613,7 @@ async function loadTutors() {
   return _tutors;
 }
 
-function logVisit()           { sbPost('visits',        { page: 'home' }); }
+function logVisit() { sbPost('visits', { page: 'home', visited_at: new Date().toISOString() }); }
 function logContact(tid) { sbPost('contacts', { tutor_id: tid, contacted_at: new Date().toISOString() }); }
 function openContactModal() {
   document.getElementById('contact-modal').style.display = 'flex';
