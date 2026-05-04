@@ -503,10 +503,31 @@
     <button class="apply-btn" onclick="filterTutors()">Apply Filters</button>
   </div>
   <div class="tutors-grid" id="tutors-grid">
-    <div id="loading-skeleton" style="display:grid;gap:16px;width:100%">
-      <div style="height:160px;background:rgba(255,255,255,0.04);border-radius:16px;animation:pulse 1.5s infinite"></div>
-      <div style="height:160px;background:rgba(255,255,255,0.04);border-radius:16px;animation:pulse 1.5s infinite 0.15s"></div>
-      <div style="height:160px;background:rgba(255,255,255,0.04);border-radius:16px;animation:pulse 1.5s infinite 0.3s"></div>
+    <div id="loading-skeleton" style="display:contents">
+      <div style="background:rgba(255,255,255,0.04);border-radius:16px;padding:20px;animation:pulse 1.5s infinite">
+        <div style="display:flex;gap:12px;margin-bottom:14px">
+          <div style="width:60px;height:60px;border-radius:14px;background:rgba(255,255,255,0.08);flex-shrink:0"></div>
+          <div style="flex:1"><div style="height:14px;background:rgba(255,255,255,0.08);border-radius:4px;margin-bottom:8px;width:60%"></div><div style="height:12px;background:rgba(255,255,255,0.06);border-radius:4px;width:40%"></div></div>
+        </div>
+        <div style="height:10px;background:rgba(255,255,255,0.06);border-radius:4px;margin-bottom:6px"></div>
+        <div style="height:10px;background:rgba(255,255,255,0.06);border-radius:4px;width:80%"></div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border-radius:16px;padding:20px;animation:pulse 1.5s infinite 0.2s">
+        <div style="display:flex;gap:12px;margin-bottom:14px">
+          <div style="width:60px;height:60px;border-radius:14px;background:rgba(255,255,255,0.08);flex-shrink:0"></div>
+          <div style="flex:1"><div style="height:14px;background:rgba(255,255,255,0.08);border-radius:4px;margin-bottom:8px;width:70%"></div><div style="height:12px;background:rgba(255,255,255,0.06);border-radius:4px;width:45%"></div></div>
+        </div>
+        <div style="height:10px;background:rgba(255,255,255,0.06);border-radius:4px;margin-bottom:6px"></div>
+        <div style="height:10px;background:rgba(255,255,255,0.06);border-radius:4px;width:70%"></div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border-radius:16px;padding:20px;animation:pulse 1.5s infinite 0.4s">
+        <div style="display:flex;gap:12px;margin-bottom:14px">
+          <div style="width:60px;height:60px;border-radius:14px;background:rgba(255,255,255,0.08);flex-shrink:0"></div>
+          <div style="flex:1"><div style="height:14px;background:rgba(255,255,255,0.08);border-radius:4px;margin-bottom:8px;width:55%"></div><div style="height:12px;background:rgba(255,255,255,0.06);border-radius:4px;width:35%"></div></div>
+        </div>
+        <div style="height:10px;background:rgba(255,255,255,0.06);border-radius:4px;margin-bottom:6px"></div>
+        <div style="height:10px;background:rgba(255,255,255,0.06);border-radius:4px;width:85%"></div>
+      </div>
     </div>
     <div class="no-results" id="no-results" style="display:none">No tutors found matching your search. Try different filters.</div>
   </div>
@@ -1024,6 +1045,7 @@ document.querySelectorAll('.fade-up').forEach(function(el){ observer.observe(el)
 // INIT
 // ============================================================
 logVisit();
+// Load real tutors - skeleton already showing in HTML
 loadTutors().then(function(tutors) {
   renderTutors(tutors);
 });
