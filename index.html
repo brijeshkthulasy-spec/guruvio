@@ -25,7 +25,8 @@
 <!-- Preconnect for speed -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://lmqsoxrnxrktzosmwkwd.supabase.co">
+<link rel="dns-prefetch" href="https://lmqsoxrnxrktzosmwkwd.supabase.co">
+<link rel="preconnect" href="https://lmqsoxrnxrktzosmwkwd.supabase.co" crossorigin>
 <!-- Non-blocking font load -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap&font-display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap&font-display=swap"></noscript>
@@ -580,6 +581,17 @@
 // ============================================================
 // SUPABASE
 // ============================================================
+// Start fetching tutors immediately — don't wait for anything
+var _prefetchPromise = null;
+try {
+  _prefetchPromise = fetch('https://lmqsoxrnxrktzosmwkwd.supabase.co/rest/v1/tutors?active=eq.true&select=id,name,phone,area,areas,subjects,classes,exp,qual,bio,photo_url,syllabus,active,mode,demo_class,av_class&order=sort_order.asc.nullslast,id.asc', {
+    headers: {
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI',
+      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI'
+    }
+  });
+} catch(e) { _prefetchPromise = null; }
+
 const SUPA_URL = 'https://lmqsoxrnxrktzosmwkwd.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI';
 
@@ -654,7 +666,22 @@ async function loadTutors() {
   }
 
   // Always fetch fresh data in background
-  var data = await sbGet('tutors?active=eq.true&order=sort_order.asc.nullslast,id.asc');
+  // Use prefetched data if available, otherwise fetch normally
+  var data;
+  try {
+    if (_prefetchPromise) {
+      var resp = await _prefetchPromise;
+      _prefetchPromise = null;
+      if (resp && resp.ok) {
+        data = await resp.json();
+      }
+    }
+    if (!data) {
+      data = await sbGet('tutors?active=eq.true&select=id,name,phone,area,areas,subjects,classes,exp,qual,bio,photo_url,syllabus,active,mode,demo_class,av_class&order=sort_order.asc.nullslast,id.asc');
+    }
+  } catch(e) {
+    data = await sbGet('tutors?active=eq.true&select=id,name,phone,area,areas,subjects,classes,exp,qual,bio,photo_url,syllabus,active,mode,demo_class,av_class&order=sort_order.asc.nullslast,id.asc');
+  }
   if (data && data.length > 0) {
     _tutors = data.map(function(t) {
       return {
