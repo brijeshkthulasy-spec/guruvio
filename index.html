@@ -624,7 +624,36 @@ var SAMPLE_TUTORS = [
   { id:5, name:'Vineeth Kumar', phone:'SAMPLE', area:'Nemom',          subjects:['Computer Science','Mathematics'],classes:['Plus One','Plus Two'],            exp:'4 years',  verified:true, active:true, rating:4.8, avClass:'av5', avatar:'V' }
 ];
 
+var CACHE_KEY = 'guruvio_tutors_v1';
+var CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCachedTutors() {
+  try {
+    var raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    var cached = JSON.parse(raw);
+    if (Date.now() - cached.ts > CACHE_TTL) return null;
+    return cached.data;
+  } catch(e) { return null; }
+}
+
+function setCachedTutors(tutors) {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: tutors }));
+  } catch(e) {}
+}
+
 async function loadTutors() {
+  // Show cached tutors instantly if available
+  var cached = getCachedTutors();
+  if (cached && cached.length > 0) {
+    _tutors = cached;
+    renderTutors(_tutors);
+    var sk = document.getElementById('loading-skeleton');
+    if (sk) sk.style.display = 'none';
+  }
+
+  // Always fetch fresh data in background
   var data = await sbGet('tutors?active=eq.true&order=sort_order.asc.nullslast,id.asc');
   if (data && data.length > 0) {
     _tutors = data.map(function(t) {
@@ -642,7 +671,8 @@ async function loadTutors() {
         avClass: t.av_class || 'av1'
       };
     });
-  } else {
+    setCachedTutors(_tutors);
+  } else if (!cached) {
     _tutors = SAMPLE_TUTORS;
   }
   return _tutors;
@@ -1050,7 +1080,7 @@ window.scrollTo(0, 0);
 // INIT
 // ============================================================
 logVisit();
-// Load real tutors - skeleton already showing in HTML
+// loadTutors handles caching — shows cached instantly, fetches fresh in background
 loadTutors().then(function(tutors) {
   renderTutors(tutors);
 });
