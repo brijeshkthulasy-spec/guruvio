@@ -585,17 +585,6 @@
 // ============================================================
 // SUPABASE
 // ============================================================
-// Start fetching tutors immediately — don't wait for anything
-var _prefetchPromise = null;
-try {
-  _prefetchPromise = fetch('https://lmqsoxrnxrktzosmwkwd.supabase.co/rest/v1/tutors?active=eq.true&select=id,name,phone,area,areas,subjects,classes,exp,qual,bio,photo_url,syllabus,active,mode,demo_class,av_class&order=sort_order.asc.nullslast,id.asc', {
-    headers: {
-      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI',
-      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI'
-    }
-  });
-} catch(e) { _prefetchPromise = null; }
-
 const SUPA_URL = 'https://lmqsoxrnxrktzosmwkwd.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI';
 
@@ -660,7 +649,7 @@ function setCachedTutors(tutors) {
 }
 
 async function loadTutors() {
-  // Show cached tutors instantly if available
+  // Step 1 — show cached instantly if available
   var cached = getCachedTutors();
   if (cached && cached.length > 0) {
     _tutors = cached;
@@ -669,43 +658,36 @@ async function loadTutors() {
     if (sk) sk.style.display = 'none';
   }
 
-  // Always fetch fresh data in background
-  // Use prefetched data if available, otherwise fetch normally
-  var data;
+  // Step 2 — always fetch fresh from Supabase
   try {
-    if (_prefetchPromise) {
-      var resp = await _prefetchPromise;
-      _prefetchPromise = null;
-      if (resp && resp.ok) {
-        data = await resp.json();
-      }
-    }
-    if (!data) {
-      data = await sbGet('tutors?active=eq.true&select=id,name,phone,area,areas,subjects,classes,exp,qual,bio,photo_url,syllabus,active,mode,demo_class,av_class&order=sort_order.asc.nullslast,id.asc');
+    var data = await sbGet('tutors?active=eq.true&select=id,name,phone,area,areas,subjects,classes,exp,qual,bio,photo_url,syllabus,active,mode,demo_class,av_class&order=sort_order.asc.nullslast,id.asc');
+    if (data && data.length > 0) {
+      _tutors = data.map(function(t) {
+        return {
+          id: t.id, name: t.name, phone: maskPhone(t.phone || ''), area: t.area,
+          subjects: t.subjects || [], classes: t.classes || [],
+          exp: t.exp || '', age: t.age, qual: t.qual, edu: t.edu,
+          bio: t.bio, photoUrl: t.photo_url,
+          areas: t.areas || (t.area ? [t.area] : []),
+          syllabus: t.syllabus || [],
+          verified: t.verified, active: t.active, rating: t.rating || 0,
+          mode: t.mode || 'Home visits & Online',
+          demoClass: t.demo_class || false,
+          avatar: (t.name || 'T')[0].toUpperCase(),
+          avClass: t.av_class || 'av1'
+        };
+      });
+      setCachedTutors(_tutors);
     }
   } catch(e) {
-    data = await sbGet('tutors?active=eq.true&select=id,name,phone,area,areas,subjects,classes,exp,qual,bio,photo_url,syllabus,active,mode,demo_class,av_class&order=sort_order.asc.nullslast,id.asc');
+    console.warn('Tutor load error:', e);
   }
-  if (data && data.length > 0) {
-    _tutors = data.map(function(t) {
-      return {
-        id: t.id, name: t.name, phone: maskPhone(t.phone || ''), area: t.area,
-        subjects: t.subjects || [], classes: t.classes || [],
-        exp: t.exp || '', age: t.age, qual: t.qual, edu: t.edu,
-        bio: t.bio, photoUrl: t.photo_url,
-        areas: t.areas || (t.area ? [t.area] : []),
-        syllabus: t.syllabus || [],
-        verified: t.verified, active: t.active, rating: t.rating || 0,
-        mode: t.mode || 'Home visits & Online',
-        demoClass: t.demo_class || false,
-        avatar: (t.name || 'T')[0].toUpperCase(),
-        avClass: t.av_class || 'av1'
-      };
-    });
-    setCachedTutors(_tutors);
-  } else if (!cached) {
+
+  // Step 3 — fallback to sample if nothing loaded
+  if (!_tutors || _tutors.length === 0) {
     _tutors = SAMPLE_TUTORS;
   }
+
   return _tutors;
 }
 
