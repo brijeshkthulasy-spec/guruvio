@@ -634,6 +634,8 @@ var CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 function getCachedTutors() {
   try {
+    // Don't use cache on page refresh
+    if (performance && performance.navigation && performance.navigation.type === 1) return null;
     var raw = sessionStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     var cached = JSON.parse(raw);
@@ -649,16 +651,7 @@ function setCachedTutors(tutors) {
 }
 
 async function loadTutors() {
-  // Step 1 — show cached instantly if available
-  var cached = getCachedTutors();
-  if (cached && cached.length > 0) {
-    _tutors = cached;
-    renderTutors(_tutors);
-    var sk = document.getElementById('loading-skeleton');
-    if (sk) sk.style.display = 'none';
-  }
-
-  // Step 2 — always fetch fresh from Supabase
+  // Step 1 — fetch from Supabase first
   try {
     var data = await sbGet('tutors?active=eq.true&select=id,name,phone,area,areas,subjects,classes,exp,qual,bio,photo_url,syllabus,active,mode,demo_class,av_class&order=sort_order.asc.nullslast,id.asc');
     if (data && data.length > 0) {
@@ -678,16 +671,21 @@ async function loadTutors() {
         };
       });
       setCachedTutors(_tutors);
+      return _tutors;
     }
   } catch(e) {
     console.warn('Tutor load error:', e);
   }
 
-  // Step 3 — fallback to sample if nothing loaded
-  if (!_tutors || _tutors.length === 0) {
-    _tutors = SAMPLE_TUTORS;
+  // Step 2 — fallback to cache if fetch failed
+  var cached = getCachedTutors();
+  if (cached && cached.length > 0) {
+    _tutors = cached;
+    return _tutors;
   }
 
+  // Step 3 — last resort fallback
+  _tutors = SAMPLE_TUTORS;
   return _tutors;
 }
 
