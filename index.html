@@ -65,13 +65,13 @@
   .nav-cta {
     background:var(--accent); color:#000; padding:10px 22px;
     border-radius:100px; font-weight:600; font-size:14px;
-    text-decoration:none; transition:all 0.2s;
+    text-decoration:none; transition:color 0.2s,background 0.2s;
   }
   .nav-cta:hover { background:#ffb84d; transform:translateY(-1px); }
   .nav-tutor-login {
     color:var(--muted); text-decoration:none; font-size:14px; font-weight:500;
     border:1px solid var(--border); padding:9px 18px; border-radius:100px;
-    transition:all 0.2s;
+    transition:color 0.2s,background 0.2s;
   }
   .nav-tutor-login:hover { color:var(--light); border-color:rgba(255,255,255,0.2); }
 
@@ -123,7 +123,7 @@
   .btn-primary {
     background:var(--accent); color:#000; padding:15px 34px;
     border-radius:100px; font-size:15px; font-weight:600;
-    border:none; cursor:pointer; transition:all 0.25s;
+    border:none; cursor:pointer; transition:background 0.25s,transform 0.25s;
     text-decoration:none; display:inline-flex; align-items:center; gap:8px;
     font-family:'DM Sans',sans-serif;
   }
@@ -147,7 +147,7 @@
   .filter-pill {
     position:relative; display:flex; align-items:center;
     background:rgba(255,255,255,0.05); border:1px solid var(--border);
-    border-radius:100px; transition:all 0.2s; overflow:hidden;
+    border-radius:100px; transition:color 0.2s,background 0.2s; overflow:hidden;
   }
   .filter-pill.active {
     background:rgba(245,166,35,0.1); border-color:rgba(245,166,35,0.4);
@@ -169,7 +169,7 @@
     width:20px; height:20px; border-radius:50%;
     background:rgba(255,255,255,0.08); border:none; cursor:pointer;
     color:var(--muted); font-size:13px; font-weight:700;
-    margin-right:10px; transition:all 0.15s; flex-shrink:0; line-height:1;
+    margin-right:10px; transition:transform 0.15s; flex-shrink:0; line-height:1;
   }
   .filter-pill.active .filter-clear {
     background:rgba(245,166,35,0.2); color:var(--accent);
@@ -179,7 +179,7 @@
     background:var(--accent); color:#000; border:none;
     border-radius:100px; padding:10px 24px;
     font-size:14px; font-weight:600; cursor:pointer;
-    font-family:'DM Sans',sans-serif; transition:all 0.2s;
+    font-family:'DM Sans',sans-serif; transition:color 0.2s,background 0.2s;
     white-space:nowrap;
   }
   .apply-btn:hover { background:#ffb84d; transform:translateY(-1px); }
@@ -202,7 +202,7 @@
   .tutors-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:20px; align-items:stretch; }
   .tutor-card {
     background:var(--card); border:1px solid var(--border);
-    border-radius:24px; padding:26px; transition:all 0.4s cubic-bezier(0.2,0,0,1);
+    border-radius:24px; padding:26px; transition:box-shadow 0.2s ease,transform 0.2s ease;
     position:relative; display:none;
     flex-direction:column; height:100%;
   }
@@ -271,7 +271,7 @@
     background:transparent; color:var(--light); border:1px solid var(--border);
     border-radius:14px; padding:11px 20px; font-size:14px; font-weight:500;
     cursor:pointer; font-family:'DM Sans',sans-serif;
-    transition:all 0.2s; width:100%; margin-bottom:10px;
+    transition:color 0.2s,background 0.2s; width:100%; margin-bottom:10px;
     -webkit-tap-highlight-color:transparent; touch-action:manipulation;
   }
   .view-profile-btn:hover { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.2); }
@@ -281,7 +281,7 @@
     background:#25d366; color:#fff; border:none; border-radius:100px;
     padding:14px 20px; font-size:14px; font-weight:600;
     cursor:pointer; font-family:'DM Sans',sans-serif;
-    transition:all 0.2s; text-decoration:none; width:100%;
+    transition:color 0.2s,background 0.2s; text-decoration:none; width:100%;
     min-height:48px; -webkit-tap-highlight-color:transparent;
     touch-action:manipulation;
   }
@@ -349,8 +349,9 @@
   .footer-links a:hover { color:var(--light); }
 
   /* SCROLL REVEAL */
-  .fade-up { opacity:0; transform:translateY(28px); transition:opacity 0.7s ease,transform 0.7s ease; }
-  .fade-up.visible { opacity:1; transform:translateY(0); }
+  .fade-up { opacity:1; transform:none; }
+  .js-loaded .fade-up { opacity:0; transform:translateY(20px); transition:opacity 0.5s ease,transform 0.5s ease; }
+  .js-loaded .fade-up.visible { opacity:1; transform:translateY(0); }
 
   /* ---- MOBILE FIRST ---- */
   @media(max-width:768px) {
@@ -1094,12 +1095,16 @@ async function submitReview(tutorId) {
 // ============================================================
 // SCROLL REVEAL
 // ============================================================
-var observer = new IntersectionObserver(function(entries) {
-  entries.forEach(function(e) {
-    if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
-  });
-}, { threshold: 0.08 });
-document.querySelectorAll('.fade-up').forEach(function(el){ observer.observe(el); });
+// Only add animations after page is ready - prevents flash of invisible content
+requestAnimationFrame(function() {
+  document.body.classList.add('js-loaded');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.fade-up').forEach(function(el){ observer.observe(el); });
+});
 
 // Scroll to top on every page load
 if (history.scrollRestoration) history.scrollRestoration = 'manual';
