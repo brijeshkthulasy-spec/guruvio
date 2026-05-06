@@ -443,7 +443,7 @@
   </div>
 </section>
 
-<section class="tutors-section fade-up" id="tutors">
+<section class="tutors-section" id="tutors">
   <div class="section-label">Our Tutors</div>
   <h2 class="section-title">Trivandrum's <span>verified tutors</span></h2>
   <div class="filters-row">
@@ -634,8 +634,16 @@ var CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 function getCachedTutors() {
   try {
-    // Don't use cache on page refresh
-    if (performance && performance.navigation && performance.navigation.type === 1) return null;
+    // Skip cache on page refresh using modern Navigation API
+    var navType = '';
+    try {
+      var navEntries = performance.getEntriesByType('navigation');
+      if (navEntries && navEntries.length > 0) navType = navEntries[0].type;
+    } catch(e) {
+      // Fallback to deprecated API
+      if (performance && performance.navigation) navType = performance.navigation.type === 1 ? 'reload' : '';
+    }
+    if (navType === 'reload') return null;
     var raw = sessionStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     var cached = JSON.parse(raw);
@@ -835,10 +843,20 @@ function renderTutors(list) {
   var noRes = document.getElementById('no-results');
   var sk    = document.getElementById('loading-skeleton');
   if (sk) sk.style.display = 'none';
+
+  // Make sure tutors section is always visible regardless of IntersectionObserver
+  var section = document.getElementById('tutors');
+  if (section) { section.style.opacity = '1'; section.style.transform = 'none'; }
+
   var visible = list.filter(function(t){ return t.active; });
-  if (!visible.length) { grid.innerHTML = noRes.outerHTML; document.getElementById('no-results').style.display='block'; return; }
-  grid.innerHTML = visible.map(renderCard).join('') + noRes.outerHTML;
-  document.getElementById('no-results').style.display = 'none';
+  if (!visible.length) {
+    grid.innerHTML = '';
+    if (noRes) noRes.style.display = 'block';
+    return;
+  }
+  // Render cards without duplicating noRes inside grid
+  grid.innerHTML = visible.map(renderCard).join('');
+  if (noRes) noRes.style.display = 'none';
 }
 
 // ============================================================
