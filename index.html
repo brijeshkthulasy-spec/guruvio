@@ -538,6 +538,14 @@
     </div>
     <div class="no-results" id="no-results" style="display:none">No tutors found matching your search. Try different filters.</div>
   </div>
+
+  <!-- Results count -->
+  <div id="results-count" style="display:none;text-align:center;color:var(--muted);font-size:13px;margin-top:16px;margin-bottom:8px"></div>
+
+  <!-- Show More button -->
+  <div style="text-align:center;margin-top:20px;margin-bottom:16px">
+    <button id="show-more-btn" onclick="loadMore()" style="display:none;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.12);color:var(--light);border-radius:100px;padding:12px 32px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.2s,transform 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.06)'">Show more tutors</button>
+  </div>
 </section>
 
 <section class="how-section" id="how">
@@ -839,25 +847,76 @@ function renderCard(t) {
     '</div>';
 }
 
+// ============================================================
+// PAGINATION — show 15 first, load more on demand
+// ============================================================
+var PAGE_SIZE = 15;
+var _currentList = []; // current filtered list
+
 function renderTutors(list) {
   var grid  = document.getElementById('tutors-grid');
   var noRes = document.getElementById('no-results');
   var sk    = document.getElementById('loading-skeleton');
   if (sk) sk.style.display = 'none';
 
-  // Make sure tutors section is always visible regardless of IntersectionObserver
+  // Always visible
   var section = document.getElementById('tutors');
   if (section) { section.style.opacity = '1'; section.style.transform = 'none'; }
 
   var visible = list.filter(function(t){ return t.active; });
+  _currentList = visible;
+
   if (!visible.length) {
     grid.innerHTML = '';
     if (noRes) noRes.style.display = 'block';
+    updateResultsCount(0, 0);
+    updateShowMore(0, 0);
     return;
   }
-  // Render cards without duplicating noRes inside grid
-  grid.innerHTML = visible.map(renderCard).join('');
+
   if (noRes) noRes.style.display = 'none';
+
+  // Show first 15 only
+  var first = visible.slice(0, PAGE_SIZE);
+  grid.innerHTML = first.map(renderCard).join('');
+
+  updateResultsCount(visible.length, first.length);
+  updateShowMore(visible.length, first.length);
+}
+
+function loadMore() {
+  var grid = document.getElementById('tutors-grid');
+  var showing = grid.querySelectorAll('.tutor-card').length;
+  var next = _currentList.slice(showing, showing + PAGE_SIZE);
+  if (!next.length) return;
+  grid.insertAdjacentHTML('beforeend', next.map(renderCard).join(''));
+  var newShowing = showing + next.length;
+  updateResultsCount(_currentList.length, newShowing);
+  updateShowMore(_currentList.length, newShowing);
+}
+
+function updateResultsCount(total, showing) {
+  var el = document.getElementById('results-count');
+  if (!el) return;
+  if (total === 0) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  if (total <= PAGE_SIZE) {
+    el.textContent = total + ' tutor' + (total === 1 ? '' : 's') + ' found';
+  } else {
+    el.textContent = 'Showing ' + showing + ' of ' + total + ' tutors';
+  }
+}
+
+function updateShowMore(total, showing) {
+  var btn = document.getElementById('show-more-btn');
+  if (!btn) return;
+  var remaining = total - showing;
+  if (remaining <= 0) {
+    btn.style.display = 'none';
+  } else {
+    btn.style.display = 'block';
+    btn.textContent = 'Show ' + Math.min(remaining, PAGE_SIZE) + ' more tutors';
+  }
 }
 
 // ============================================================
@@ -870,7 +929,6 @@ function showAreasTip(e, areasStr) {
   var box = document.getElementById('areas-tooltip-box');
   box.innerHTML = areas.map(function(a){ return '📍 ' + a.trim(); }).join('<br>');
   box.style.display = 'block';
-  // Position above the element
   var rect = e.target.getBoundingClientRect();
   var boxW = 200;
   var left = rect.left + (rect.width/2) - (boxW/2);
@@ -911,17 +969,14 @@ function filterTutors() {
   var cls  = document.getElementById('filter-class').value;
   var filtered = _tutors.filter(function(t) {
     if (!t.active) return false;
-    // Subject filter — exclude syllabus values from subjects array
     if (subj) {
       var cleanSubjects = (t.subjects||[]).filter(function(s){ return SYLLABUS_VALUES.indexOf(s) === -1; });
       if (cleanSubjects.indexOf(subj) === -1) return false;
     }
-    // Area filter — check against areas array (multi-area tutors)
     if (area) {
       var tutorAreas = (t.areas && t.areas.length) ? t.areas : (t.area ? [t.area] : []);
       if (tutorAreas.indexOf(area) === -1) return false;
     }
-    // Class filter
     if (cls && (t.classes||[]).indexOf(cls) === -1) return false;
     return true;
   });
