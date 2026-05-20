@@ -940,7 +940,9 @@ function renderTutors(list) {
   grid.innerHTML = first.map(renderCard).join('');
 
   updateResultsCount(visible.length, first.length);
-  updateShowMore(visible.length, first.length);
+  // Show More if: more in current filtered list OR more tutors not yet fetched
+  var moreAvailable = visible.length > first.length || !_allTutorsFetched;
+  updateShowMore(moreAvailable ? first.length + 1 : 0, first.length);
 }
 
 async function loadMore() {
@@ -993,7 +995,13 @@ function updateShowMore(total, showing) {
     wrap.style.display = 'none';
   } else {
     wrap.style.display = 'block';
-    btn.textContent = 'Show ' + Math.min(remaining, PAGE_SIZE) + ' more tutors ↓';
+    // If we don't know exact remaining count yet show generic text
+    if (!_allTutorsFetched && _currentList.length <= PAGE_SIZE) {
+      btn.textContent = 'Show more tutors ↓';
+    } else {
+      var r = _currentList.length - showing;
+      btn.textContent = r > 0 ? 'Show ' + Math.min(r, PAGE_SIZE) + ' more tutors ↓' : 'Show more tutors ↓';
+    }
   }
 }
 
