@@ -699,9 +699,10 @@ var _currentFilters   = { subj: '', area: '', cls: '' };
 // Build Supabase query string from filters
 function buildQuery(filters, offset, limit, countOnly) {
   var q = 'tutors?active=eq.true';
-  if (filters.subj) q += '&subjects=cs.["' + filters.subj + '"]';
-  if (filters.area) q += '&areas=cs.["' + filters.area + '"]';
-  if (filters.cls)  q += '&classes=cs.["' + filters.cls  + '"]';
+  // Supabase array containment syntax: subjects=cs.{Mathematics}
+  if (filters.subj) q += '&subjects=cs.{' + encodeURIComponent(filters.subj) + '}';
+  if (filters.area) q += '&areas=cs.{' + encodeURIComponent(filters.area) + '}';
+  if (filters.cls)  q += '&classes=cs.{' + encodeURIComponent(filters.cls) + '}';
   if (countOnly) {
     q += '&select=id';
   } else {
@@ -792,30 +793,36 @@ async function loadMore() {
 
   if (btn) { btn.textContent = 'Loading...'; btn.disabled = true; }
 
+  // Timeout after 8 seconds
+  var timeoutId = setTimeout(function() {
+    if (btn) { btn.textContent = 'Show more tutors ↓'; btn.disabled = false; }
+    console.warn('loadMore timed out');
+  }, 8000);
+
   try {
     var data = await sbGet(buildQuery(_currentFilters, _currentOffset, PAGE_SIZE, false));
+    clearTimeout(timeoutId);
     if (data && data.length > 0) {
       var mapped = data.map(mapTutor);
-      // Add to tutors array and current list
       _tutors = _tutors.concat(mapped);
       _currentList = _currentList.concat(mapped);
       _currentOffset += data.length;
       _allTutorsFetched = data.length < PAGE_SIZE;
-      // Render new cards
       grid.insertAdjacentHTML('beforeend', mapped.map(renderCard).join(''));
       var showing = grid.querySelectorAll('.tutor-card').length;
       updateResultsCount(_totalTutorCount || _currentList.length, showing);
-      // Show more button
-      if (_allTutorsFetched || showing >= _totalTutorCount) {
+      if (_allTutorsFetched || (_totalTutorCount > 0 && showing >= _totalTutorCount)) {
         if (wrap) wrap.style.display = 'none';
       } else {
         if (btn) { btn.textContent = 'Show more tutors ↓'; btn.disabled = false; }
       }
     } else {
+      clearTimeout(timeoutId);
       _allTutorsFetched = true;
       if (wrap) wrap.style.display = 'none';
     }
   } catch(e) {
+    clearTimeout(timeoutId);
     console.warn('Load more error:', e);
     if (btn) { btn.textContent = 'Show more tutors ↓'; btn.disabled = false; }
   }
