@@ -692,10 +692,24 @@ function setCachedTutors(tutors) {
 }
 
 var _allTutorsFetched = false;
-var _totalTutorCount = 0;
+var _totalTutorCount  = 0;
+var _currentOffset    = 0;
+var _currentFilters   = { subj: '', area: '', cls: '' };
 
-async function fetchTutorsBatch(offset, limit) {
-  return await sbGet('tutors?active=eq.true&select=id,name,phone,area,areas,subjects,classes,exp,qual,bio,photo_url,syllabus,active,mode,demo_class,av_class&order=sort_order.asc.nullslast,id.asc&limit='+limit+'&offset='+offset);
+// Build Supabase query string from filters
+function buildQuery(filters, offset, limit, countOnly) {
+  var q = 'tutors?active=eq.true';
+  if (filters.subj) q += '&subjects=cs.["' + filters.subj + '"]';
+  if (filters.area) q += '&areas=cs.["' + filters.area + '"]';
+  if (filters.cls)  q += '&classes=cs.["' + filters.cls  + '"]';
+  if (countOnly) {
+    q += '&select=id';
+  } else {
+    q += '&select=id,name,phone,area,areas,subjects,classes,exp,qual,bio,photo_url,syllabus,active,mode,demo_class,av_class';
+    q += '&order=sort_order.asc.nullslast,id.asc';
+    q += '&limit=' + limit + '&offset=' + offset;
+  }
+  return q;
 }
 
 function mapTutor(t) {
@@ -714,55 +728,96 @@ function mapTutor(t) {
   };
 }
 
+// Fetch total count for current filters
+async function fetchTotalCount(filters) {
+  try {
+    var q = buildQuery(filters, 0, 0, true);
+    var r = await fetch(SUPA_URL + '/rest/v1/' + q, {
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Accept': 'application/json',
+        'Prefer': 'count=exact'
+      },
+      cache: 'no-store'
+    });
+    var count = r.headers.get('content-range');
+    if (count) {
+      var total = parseInt(count.split('/')[1]);
+      if (!isNaN(total)) return total;
+    }
+    var data = await r.json();
+    return Array.isArray(data) ? data.length : 0;
+  } catch(e) { return 0; }
+}
+
+// Main initial load — fetch first 15 + total count in parallel
 async function loadTutors() {
-  // Try cache first
+  // Check cache
   var cached = getCachedTutors();
   if (cached && cached.length > 0) {
     _tutors = cached;
     _allTutorsFetched = true;
+    _currentOffset = _tutors.length;
     return _tutors;
   }
 
-  // Fetch only first 15 for fast initial load
   try {
-    var data = await fetchTutorsBatch(0, 15);
+    var filters = { subj: '', area: '', cls: '' };
+    var [data, total] = await Promise.all([
+      sbGet(buildQuery(filters, 0, PAGE_SIZE, false)),
+      fetchTotalCount(filters)
+    ]);
+
     if (data && data.length > 0) {
       _tutors = data.map(mapTutor);
-      _allTutorsFetched = data.length < 15;
-      // Silently fetch remaining in background
-      if (!_allTutorsFetched) {
-        fetchRemainingTutors();
-      } else {
-        setCachedTutors(_tutors);
-      }
+      _totalTutorCount = total || data.length;
+      _currentOffset = data.length;
+      _allTutorsFetched = data.length < PAGE_SIZE;
+      if (_allTutorsFetched) setCachedTutors(_tutors);
     }
   } catch(e) {
     console.warn('Tutor load error:', e);
-    _tutors = SAMPLE_TUTORS;
   }
 
   if (!_tutors || _tutors.length === 0) _tutors = SAMPLE_TUTORS;
   return _tutors;
 }
 
-async function fetchRemainingTutors() {
+// Show More — fetch next 15 from API
+async function loadMore() {
+  var grid = document.getElementById('tutors-grid');
+  var btn  = document.getElementById('show-more-btn');
+  var wrap = document.getElementById('show-more-wrap');
+
+  if (btn) { btn.textContent = 'Loading...'; btn.disabled = true; }
+
   try {
-    var offset = _tutors.filter(function(t){return t.active!==false}).length || 15;
-    var batchSize = 50;
-    var more = await fetchTutorsBatch(offset, batchSize);
-    if (more && more.length > 0) {
-      var mapped = more.map(mapTutor);
+    var data = await sbGet(buildQuery(_currentFilters, _currentOffset, PAGE_SIZE, false));
+    if (data && data.length > 0) {
+      var mapped = data.map(mapTutor);
+      // Add to tutors array and current list
       _tutors = _tutors.concat(mapped);
-      _allTutorsFetched = more.length < batchSize;
-      setCachedTutors(_tutors);
-      // Update show more button count silently
-      updateShowMore(_currentList.length > 0 ? _currentList.length : _tutors.length,
-        document.getElementById('tutors-grid') ? document.getElementById('tutors-grid').querySelectorAll('.tutor-card').length : 15);
+      _currentList = _currentList.concat(mapped);
+      _currentOffset += data.length;
+      _allTutorsFetched = data.length < PAGE_SIZE;
+      // Render new cards
+      grid.insertAdjacentHTML('beforeend', mapped.map(renderCard).join(''));
+      var showing = grid.querySelectorAll('.tutor-card').length;
+      updateResultsCount(_totalTutorCount || _currentList.length, showing);
+      // Show more button
+      if (_allTutorsFetched || showing >= _totalTutorCount) {
+        if (wrap) wrap.style.display = 'none';
+      } else {
+        if (btn) { btn.textContent = 'Show more tutors ↓'; btn.disabled = false; }
+      }
     } else {
       _allTutorsFetched = true;
+      if (wrap) wrap.style.display = 'none';
     }
   } catch(e) {
-    console.warn('Background fetch error:', e);
+    console.warn('Load more error:', e);
+    if (btn) { btn.textContent = 'Show more tutors ↓'; btn.disabled = false; }
   }
 }
 
@@ -918,31 +973,41 @@ function renderTutors(list) {
   var sk    = document.getElementById('loading-skeleton');
   if (sk) sk.style.display = 'none';
 
-  // Always visible
   var section = document.getElementById('tutors');
   if (section) { section.style.opacity = '1'; section.style.transform = 'none'; }
 
-  var visible = list.filter(function(t){ return t.active; });
+  var visible = list.filter(function(t){ return t.active !== false; });
   _currentList = visible;
 
   if (!visible.length) {
     grid.innerHTML = '';
     if (noRes) noRes.style.display = 'block';
     updateResultsCount(0, 0);
-    updateShowMore(0, 0);
+    var wrap = document.getElementById('show-more-wrap');
+    if (wrap) wrap.style.display = 'none';
     return;
   }
 
   if (noRes) noRes.style.display = 'none';
-
-  // Show first 15 only
   var first = visible.slice(0, PAGE_SIZE);
   grid.innerHTML = first.map(renderCard).join('');
 
-  updateResultsCount(visible.length, first.length);
-  // Show More if: more in current filtered list OR more tutors not yet fetched
-  var moreAvailable = visible.length > first.length || !_allTutorsFetched;
-  updateShowMore(moreAvailable ? first.length + 1 : 0, first.length);
+  var total = _totalTutorCount || visible.length;
+  updateResultsCount(total, first.length);
+
+  // Show More if we know there are more OR if showing less than what we loaded
+  var wrap = document.getElementById('show-more-wrap');
+  var btn  = document.getElementById('show-more-btn');
+  if (wrap && btn) {
+    var hasMore = (total > first.length) || (!_allTutorsFetched && visible.length >= PAGE_SIZE);
+    if (hasMore) {
+      wrap.style.display = 'block';
+      btn.textContent = 'Show more tutors ↓';
+      btn.disabled = false;
+    } else {
+      wrap.style.display = 'none';
+    }
+  }
 }
 
 async function loadMore() {
@@ -1049,6 +1114,7 @@ function clearFilter(selectId, pillId) {
   filterTutors(); // Clear applies immediately
 }
 var SYLLABUS_VALUES = ['CBSE','ICSE','IGCSE','State Syllabus'];
+
 function toggleFilters() {
   var panel = document.getElementById('filters-panel');
   var btn   = document.getElementById('filter-toggle-btn');
@@ -1066,62 +1132,80 @@ function toggleFilters() {
 var _activeQuickSubject = '';
 function setQuickSubject(subj) {
   _activeQuickSubject = subj;
-  // Update active state on buttons
-  document.querySelectorAll('.qs-btn').forEach(function(b) {
-    b.classList.remove('qs-active');
-  });
-  var activeId = subj === '' ? 'qs-all'
-    : subj === 'Mathematics' ? 'qs-maths'
-    : subj === 'Science' ? 'qs-science'
-    : subj === 'English' ? 'qs-english'
-    : subj === 'Physics' ? 'qs-physics'
-    : subj === 'Chemistry' ? 'qs-chem'
-    : subj === 'Biology' ? 'qs-bio'
-    : subj === 'Accountancy' ? 'qs-acc'
-    : subj === 'Computer Science' ? 'qs-cs'
-    : subj === 'Hindi' ? 'qs-hindi' : 'qs-all';
-  var el = document.getElementById(activeId);
+  document.querySelectorAll('.qs-btn').forEach(function(b){ b.classList.remove('qs-active'); });
+  var idMap = {'':'qs-all','Mathematics':'qs-maths','Science':'qs-science','English':'qs-english',
+    'Physics':'qs-physics','Chemistry':'qs-chem','Biology':'qs-bio',
+    'Accountancy':'qs-acc','Computer Science':'qs-cs','Hindi':'qs-hindi'};
+  var el = document.getElementById(idMap[subj] || 'qs-all');
   if (el) el.classList.add('qs-active');
-  // Filter tutors
-  var area = document.getElementById('filter-area').value;
-  var cls  = document.getElementById('filter-class').value;
-  var filtered = _tutors.filter(function(t) {
-    if (!t.active) return false;
-    if (subj) {
-      var allSubjects = (t.subjects||[]);
-      var match = allSubjects.some(function(s) {
-        return s === subj || s.toLowerCase().indexOf(subj.toLowerCase()) !== -1;
-      });
-      if (!match) return false;
-    }
-    if (area) {
-      var tutorAreas = (t.areas && t.areas.length) ? t.areas : (t.area ? [t.area] : []);
-      if (tutorAreas.indexOf(area) === -1) return false;
-    }
-    if (cls && (t.classes||[]).indexOf(cls) === -1) return false;
-    return true;
-  });
-  renderTutors(filtered);
+  // Sync subject dropdown
+  var sel = document.getElementById('filter-subject');
+  if (sel) {
+    sel.value = subj;
+    var pill = document.getElementById('pill-subject');
+    if (pill) { if (subj) pill.classList.add('active'); else pill.classList.remove('active'); }
+  }
+  filterTutors();
 }
 
 function filterTutors() {
   var subj = document.getElementById('filter-subject').value;
   var area = document.getElementById('filter-area').value;
   var cls  = document.getElementById('filter-class').value;
-  var filtered = _tutors.filter(function(t) {
-    if (!t.active) return false;
-    if (subj) {
-      var cleanSubjects = (t.subjects||[]).filter(function(s){ return SYLLABUS_VALUES.indexOf(s) === -1; });
-      if (cleanSubjects.indexOf(subj) === -1) return false;
+  _currentFilters = { subj: subj, area: area, cls: cls };
+  _currentOffset  = 0;
+  _allTutorsFetched = false;
+
+  var grid = document.getElementById('tutors-grid');
+  var wrap = document.getElementById('show-more-wrap');
+  if (wrap) wrap.style.display = 'none';
+
+  // No filters — show cached/loaded tutors from memory
+  if (!subj && !area && !cls) {
+    _currentOffset = _tutors.length;
+    _totalTutorCount = 0;
+    renderTutors(_tutors);
+    return;
+  }
+
+  // Show loading state
+  if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:14px">Finding tutors...</div>';
+
+  // Fetch from API with filters + count
+  Promise.all([
+    sbGet(buildQuery(_currentFilters, 0, PAGE_SIZE, false)),
+    fetchTotalCount(_currentFilters)
+  ]).then(function(results) {
+    var data  = results[0];
+    var total = results[1];
+    var noRes = document.getElementById('no-results');
+
+    if (data && data.length > 0) {
+      var mapped = data.map(mapTutor);
+      _currentList = mapped;
+      _currentOffset = mapped.length;
+      _totalTutorCount = total || mapped.length;
+      _allTutorsFetched = mapped.length < PAGE_SIZE;
+
+      if (grid) grid.innerHTML = mapped.map(renderCard).join('');
+      if (noRes) noRes.style.display = 'none';
+      updateResultsCount(_totalTutorCount, mapped.length);
+
+      if (wrap) {
+        var hasMore = _totalTutorCount > mapped.length;
+        wrap.style.display = hasMore ? 'block' : 'none';
+        var btn = document.getElementById('show-more-btn');
+        if (btn) { btn.textContent = 'Show more tutors ↓'; btn.disabled = false; }
+      }
+    } else {
+      if (grid) grid.innerHTML = '';
+      if (noRes) noRes.style.display = 'block';
+      updateResultsCount(0, 0);
     }
-    if (area) {
-      var tutorAreas = (t.areas && t.areas.length) ? t.areas : (t.area ? [t.area] : []);
-      if (tutorAreas.indexOf(area) === -1) return false;
-    }
-    if (cls && (t.classes||[]).indexOf(cls) === -1) return false;
-    return true;
+  }).catch(function(e) {
+    console.warn('Filter error:', e);
+    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Could not load tutors. Please try again.</div>';
   });
-  renderTutors(filtered);
 }
 
 // ============================================================
