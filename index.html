@@ -44,17 +44,13 @@
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:#FDF8F2; color:var(--light); font-family:'DM Sans',sans-serif; overflow-x:hidden; }
-  body::before {
-    content:''; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:0.35;
-    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-  }
 
   /* NAV */
   nav {
     position:fixed; top:0; left:0; right:0; z-index:100;
     display:flex; align-items:center; justify-content:space-between;
     padding:18px 48px;
-    background:rgba(253,248,242,0.96); backdrop-filter:blur(14px); box-shadow:0 1px 0 rgba(0,0,0,0.08);
+    background:rgba(253,248,242,0.96); box-shadow:0 1px 0 rgba(0,0,0,0.08);
     border-bottom:1px solid rgba(255,255,255,0.09);
   }
   .logo { font-family:'Playfair Display',serif; font-size:26px; font-weight:900; color:var(--light); }
@@ -82,16 +78,7 @@
     text-align:center; padding:100px 24px 50px; position:relative; overflow:hidden;
 background:linear-gradient(160deg,#FDF8F2 0%,#FDF0E0 50%,#FDF8F2 100%);
   }
-  .glow1 {
-    position:absolute; top:-200px; left:50%; transform:translateX(-50%);
-    width:600px; height:600px; pointer-events:none;
-background:radial-gradient(ellipse,rgba(232,98,10,0.08) 0%,transparent 65%);
-  }
-  .glow2 {
-    position:absolute; bottom:-100px; right:-100px;
-    width:400px; height:400px; pointer-events:none;
-background:radial-gradient(ellipse,rgba(8,145,178,0.06) 0%,transparent 65%);
-  }
+
   .hero-badge {
     display:inline-flex; align-items:center; gap:8px;
     background:rgba(232,98,10,0.08); border:1px solid rgba(232,98,10,0.2);
@@ -129,15 +116,11 @@ background:radial-gradient(ellipse,rgba(8,145,178,0.06) 0%,transparent 65%);
     font-family:'DM Sans',sans-serif;
   }
   .btn-primary:hover { background:#ffb84d; transform:translateY(-2px); box-shadow:0 16px 40px rgba(245,166,35,0.32); letter-spacing:0.2px; }
-  .hero-stats {
-    display:flex; gap:48px; margin-top:56px;
-    animation:fadeUp 0.4s ease 0.1s both;
-  }
+
   .stat { text-align:center; }
   .stat-num { font-family:'Playfair Display',serif; font-size:38px; font-weight:700; letter-spacing:-1px; }
   .stat-num span { color:var(--accent); }
   .stat-label { font-size:13px; color:var(--muted); margin-top:4px; }
-  @font-face{font-family:'Playfair Display';font-display:swap}
   @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
   @keyframes popIn { from{opacity:0;transform:scale(0.9) translateY(12px)} to{opacity:1;transform:scale(1) translateY(0)} }
 
@@ -294,6 +277,10 @@ background:radial-gradient(ellipse,rgba(8,145,178,0.06) 0%,transparent 65%);
     color:#64748B; font-size:16px; grid-column:1/-1;
   }
   @keyframes pulse{0%,100%{opacity:0.3}50%{opacity:0.7}}
+  .qs-btn{flex-shrink:0;background:#fff;border:1.5px solid rgba(0,0,0,0.1);color:#64748B;border-radius:100px;padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s,border-color 0.15s,color 0.15s;white-space:nowrap}
+  .qs-btn:hover{background:#FFF0E8;border-color:rgba(232,98,10,0.3);color:#E8620A}
+  .qs-btn.qs-active{background:#E8620A;border-color:#E8620A;color:#fff;font-weight:600}
+  #quick-subjects::-webkit-scrollbar{display:none}
 
   /* HOW IT WORKS */
   .how-section {
@@ -350,7 +337,6 @@ background:radial-gradient(ellipse,rgba(8,145,178,0.06) 0%,transparent 65%);
   .footer-links a:hover { color:var(--light); }
 
   /* SCROLL REVEAL */
-  .fade-up { opacity:1; transform:none; }
   .js-loaded .fade-up { opacity:0; transform:translateY(20px); transition:opacity 0.5s ease,transform 0.5s ease; }
   .js-loaded .fade-up.visible { opacity:1; transform:translateY(0); }
 
@@ -429,8 +415,6 @@ background:radial-gradient(ellipse,rgba(8,145,178,0.06) 0%,transparent 65%);
 </nav>
 
 <section class="hero">
-  <div class="glow1"></div>
-  <div class="glow2"></div>
   <div class="hero-badge">Free for Parents · No Registration</div>
   <h1>Find the right <em>tutor</em><br>for your child</h1>
   <p>Verified home tutors across Trivandrum. Browse profiles and connect directly on WhatsApp — free, fast, no waiting.</p>
@@ -440,74 +424,103 @@ background:radial-gradient(ellipse,rgba(8,145,178,0.06) 0%,transparent 65%);
 </section>
 
 <section class="tutors-section" id="tutors">
-  <div class="section-label">Our Tutors</div>
-  <h2 class="section-title">Trivandrum's <span>verified tutors</span></h2>
-  <!-- Social proof -->
-  <div id="social-proof" style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(8,145,178,0.06);border:1px solid rgba(8,145,178,0.15);border-radius:100px;padding:8px 18px;margin-bottom:20px;width:fit-content;margin-left:auto;margin-right:auto">
-    <span style="width:8px;height:8px;border-radius:50%;background:#0891B2;display:inline-block;animation:pulse 1.5s infinite"></span>
-    <span style="font-size:13px;color:#0891B2;font-weight:500">Parents in Trivandrum are connecting with tutors this week</span>
+  <!-- Hook line -->
+  <div style="margin-bottom:6px">
+    <div class="section-label">Our Tutors</div>
+    <h2 class="section-title">Find your child's tutor today</h2>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:14px">Free · Direct WhatsApp · No registration</p>
   </div>
-  <div class="filters-row">
-    <div class="filter-pill" id="pill-subject">
-      <select id="filter-subject" onchange="onFilterChange('pill-subject',this)">
-        <option value="">Subject</option>
-        <option>Mathematics</option>
-        <option>Physics</option>
-        <option>Chemistry</option>
-        <option>Biology</option>
-        <option>English</option>
-        <option>Malayalam</option>
-        <option>Hindi</option>
-        <option>Social Science</option>
-        <option>Computer Science</option>
-        <option>Accountancy</option>
-        <option>Economics</option>
-        <option>Geography</option>
-      </select>
-      <button class="filter-clear" onclick="clearFilter('filter-subject','pill-subject')">×</button>
+
+  <!-- Social proof -->
+  <div id="social-proof" style="display:flex;align-items:center;gap:8px;background:rgba(8,145,178,0.06);border:1px solid rgba(8,145,178,0.15);border-radius:100px;padding:7px 14px;margin-bottom:18px;width:fit-content">
+    <span style="width:7px;height:7px;border-radius:50%;background:#0891B2;display:inline-block;animation:pulse 1.5s infinite;flex-shrink:0"></span>
+    <span style="font-size:12px;color:#0891B2;font-weight:500">Parents in Trivandrum are connecting with tutors this week</span>
+  </div>
+
+  <!-- Quick subject buttons -->
+  <div id="quick-subjects" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;-webkit-overflow-scrolling:touch;scrollbar-width:none">
+    <button onclick="setQuickSubject('')"    id="qs-all"     class="qs-btn qs-active">All</button>
+    <button onclick="setQuickSubject('Mathematics')"  id="qs-maths"   class="qs-btn">Maths</button>
+    <button onclick="setQuickSubject('Science')"      id="qs-science" class="qs-btn">Science</button>
+    <button onclick="setQuickSubject('English')"      id="qs-english" class="qs-btn">English</button>
+    <button onclick="setQuickSubject('Physics')"      id="qs-physics" class="qs-btn">Physics</button>
+    <button onclick="setQuickSubject('Chemistry')"    id="qs-chem"    class="qs-btn">Chemistry</button>
+    <button onclick="setQuickSubject('Biology')"      id="qs-bio"     class="qs-btn">Biology</button>
+    <button onclick="setQuickSubject('Accountancy')"  id="qs-acc"     class="qs-btn">Accountancy</button>
+    <button onclick="setQuickSubject('Computer Science')" id="qs-cs"  class="qs-btn">Computers</button>
+    <button onclick="setQuickSubject('Hindi')"        id="qs-hindi"   class="qs-btn">Hindi</button>
+  </div>
+
+  <!-- Collapsible advanced filters -->
+  <div style="margin-bottom:14px">
+    <button onclick="toggleFilters()" id="filter-toggle-btn" style="background:transparent;border:1px solid rgba(0,0,0,0.12);color:var(--muted);border-radius:100px;padding:7px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      More filters
+    </button>
+    <div id="filters-panel" style="display:none;margin-top:10px">
+      <div class="filters-row">
+        <div class="filter-pill" id="pill-subject">
+          <select id="filter-subject" onchange="onFilterChange('pill-subject',this)">
+            <option value="">Subject</option>
+            <option>Mathematics</option>
+            <option>Physics</option>
+            <option>Chemistry</option>
+            <option>Biology</option>
+            <option>English</option>
+            <option>Malayalam</option>
+            <option>Hindi</option>
+            <option>Social Science</option>
+            <option>Computer Science</option>
+            <option>Accountancy</option>
+            <option>Economics</option>
+            <option>Geography</option>
+          </select>
+          <button class="filter-clear" onclick="clearFilter('filter-subject','pill-subject')">×</button>
+        </div>
+        <div class="filter-pill" id="pill-area">
+          <select id="filter-area" onchange="onFilterChange('pill-area',this)">
+            <option value="">Area</option>
+            <option>Pattom</option>
+            <option>Kowdiar</option>
+            <option>Kazhakuttam</option>
+            <option>Vanchiyoor</option>
+            <option>Nemom</option>
+            <option>Kesavadasapuram</option>
+            <option>Sasthamangalam</option>
+            <option>Manacaud</option>
+            <option>Thampanoor</option>
+            <option>Nalanchira</option>
+            <option>Nanthancode</option>
+            <option>Peroorkada</option>
+            <option>Thirumala</option>
+            <option>Ulloor</option>
+            <option>Vattiyoorkavu</option>
+            <option>Pappanamcode</option>
+            <option>Palayam</option>
+            <option>Sreekaryam</option>
+            <option>PMG</option>
+            <option>Technopark</option>
+            <option>Kuravankonam</option>
+            <option>Vellayambalam</option>
+            <option>YMR</option>
+          </select>
+          <button class="filter-clear" onclick="clearFilter('filter-area','pill-area')">×</button>
+        </div>
+        <div class="filter-pill" id="pill-class">
+          <select id="filter-class" onchange="onFilterChange('pill-class',this)">
+            <option value="">Class</option>
+            <option>Class 1–5</option>
+            <option>Class 6–8</option>
+            <option>Class 9–10</option>
+            <option>Plus One</option>
+            <option>Plus Two</option>
+            <option>Degree</option>
+          </select>
+          <button class="filter-clear" onclick="clearFilter('filter-class','pill-class')">×</button>
+        </div>
+        <button class="apply-btn" onclick="filterTutors()">Apply Filters</button>
+      </div>
     </div>
-    <div class="filter-pill" id="pill-area">
-      <select id="filter-area" onchange="onFilterChange('pill-area',this)">
-        <option value="">Area</option>
-        <option>Pattom</option>
-        <option>Kowdiar</option>
-        <option>Kazhakuttam</option>
-        <option>Vanchiyoor</option>
-        <option>Nemom</option>
-        <option>Kesavadasapuram</option>
-        <option>Sasthamangalam</option>
-        <option>Manacaud</option>
-        <option>Thampanoor</option>
-        <option>Nalanchira</option>
-        <option>Nanthancode</option>
-        <option>Peroorkada</option>
-        <option>Thirumala</option>
-        <option>Ulloor</option>
-        <option>Vattiyoorkavu</option>
-        <option>Pappanamcode</option>
-        <option>Palayam</option>
-        <option>Sreekaryam</option>
-        <option>PMG</option>
-        <option>Technopark</option>
-        <option>Kuravankonam</option>
-        <option>Vellayambalam</option>
-        <option>YMR</option>
-      </select>
-      <button class="filter-clear" onclick="clearFilter('filter-area','pill-area')">×</button>
-    </div>
-    <div class="filter-pill" id="pill-class">
-      <select id="filter-class" onchange="onFilterChange('pill-class',this)">
-        <option value="">Class</option>
-        <option>Class 1–5</option>
-        <option>Class 6–8</option>
-        <option>Class 9–10</option>
-        <option>Plus One</option>
-        <option>Plus Two</option>
-        <option>Degree</option>
-      </select>
-      <button class="filter-clear" onclick="clearFilter('filter-class','pill-class')">×</button>
-    </div>
-    <button class="apply-btn" onclick="filterTutors()">Apply Filters</button>
   </div>
   <div class="tutors-grid" id="tutors-grid">
     <div id="loading-skeleton" style="display:contents">
@@ -589,7 +602,6 @@ background:radial-gradient(ellipse,rgba(8,145,178,0.06) 0%,transparent 65%);
   </div>
 </footer>
 
-
 <script>
 // ============================================================
 // SUPABASE
@@ -597,10 +609,22 @@ background:radial-gradient(ellipse,rgba(8,145,178,0.06) 0%,transparent 65%);
 const SUPA_URL = 'https://lmqsoxrnxrktzosmwkwd.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXNveHJueHJrdHpvc213a3dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTM0NjcsImV4cCI6MjA5MDk2OTQ2N30.W1H13pw8QyGTNwfReroS3qF1owJNgQE9v03-gkgJnxI';
 
+// Wake up Supabase immediately — free tier pauses after inactivity
+// This ping fires before anything else so DB is ready when main query arrives
+(function() {
+  try {
+    fetch(SUPA_URL + '/rest/v1/tutors?select=id&limit=1&active=eq.true', {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Accept': 'application/json' },
+      cache: 'no-store'
+    });
+  } catch(e) {}
+})();
+
 async function sbGet(path) {
   try {
     const r = await fetch(SUPA_URL + '/rest/v1/' + path, {
-      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Accept': 'application/json' },
+      cache: 'no-store'
     });
     if (!r.ok) return [];
     return await r.json();
@@ -667,43 +691,79 @@ function setCachedTutors(tutors) {
   } catch(e) {}
 }
 
-async function loadTutors() {
-  // Step 1 — fetch from Supabase first
-  try {
-    var data = await sbGet('tutors?active=eq.true&select=id,name,phone,area,areas,subjects,classes,exp,qual,bio,photo_url,syllabus,active,mode,demo_class,av_class&order=sort_order.asc.nullslast,id.asc');
-    if (data && data.length > 0) {
-      _tutors = data.map(function(t) {
-        return {
-          id: t.id, name: t.name, phone: maskPhone(t.phone || ''), area: t.area,
-          subjects: t.subjects || [], classes: t.classes || [],
-          exp: t.exp || '', age: t.age, qual: t.qual, edu: t.edu,
-          bio: t.bio, photoUrl: t.photo_url,
-          areas: t.areas || (t.area ? [t.area] : []),
-          syllabus: t.syllabus || [],
-          verified: t.verified, active: t.active, rating: t.rating || 0,
-          mode: t.mode || 'Home visits & Online',
-          demoClass: t.demo_class || false,
-          avatar: (t.name || 'T')[0].toUpperCase(),
-          avClass: t.av_class || 'av1'
-        };
-      });
-      setCachedTutors(_tutors);
-      return _tutors;
-    }
-  } catch(e) {
-    console.warn('Tutor load error:', e);
-  }
+var _allTutorsFetched = false;
+var _totalTutorCount = 0;
 
-  // Step 2 — fallback to cache if fetch failed
+async function fetchTutorsBatch(offset, limit) {
+  return await sbGet('tutors?active=eq.true&select=id,name,phone,area,areas,subjects,classes,exp,qual,bio,photo_url,syllabus,active,mode,demo_class,av_class&order=sort_order.asc.nullslast,id.asc&limit='+limit+'&offset='+offset);
+}
+
+function mapTutor(t) {
+  return {
+    id: t.id, name: t.name, phone: maskPhone(t.phone || ''), area: t.area,
+    subjects: t.subjects || [], classes: t.classes || [],
+    exp: t.exp || '', age: t.age, qual: t.qual, edu: t.edu,
+    bio: t.bio, photoUrl: t.photo_url,
+    areas: t.areas || (t.area ? [t.area] : []),
+    syllabus: t.syllabus || [],
+    verified: t.verified, active: t.active, rating: t.rating || 0,
+    mode: t.mode || 'Home visits & Online',
+    demoClass: t.demo_class || false,
+    avatar: (t.name || 'T')[0].toUpperCase(),
+    avClass: t.av_class || 'av1'
+  };
+}
+
+async function loadTutors() {
+  // Try cache first
   var cached = getCachedTutors();
   if (cached && cached.length > 0) {
     _tutors = cached;
+    _allTutorsFetched = true;
     return _tutors;
   }
 
-  // Step 3 — last resort fallback
-  _tutors = SAMPLE_TUTORS;
+  // Fetch only first 15 for fast initial load
+  try {
+    var data = await fetchTutorsBatch(0, 15);
+    if (data && data.length > 0) {
+      _tutors = data.map(mapTutor);
+      _allTutorsFetched = data.length < 15;
+      // Silently fetch remaining in background
+      if (!_allTutorsFetched) {
+        fetchRemainingTutors();
+      } else {
+        setCachedTutors(_tutors);
+      }
+    }
+  } catch(e) {
+    console.warn('Tutor load error:', e);
+    _tutors = SAMPLE_TUTORS;
+  }
+
+  if (!_tutors || _tutors.length === 0) _tutors = SAMPLE_TUTORS;
   return _tutors;
+}
+
+async function fetchRemainingTutors() {
+  try {
+    var offset = _tutors.filter(function(t){return t.active!==false}).length || 15;
+    var batchSize = 50;
+    var more = await fetchTutorsBatch(offset, batchSize);
+    if (more && more.length > 0) {
+      var mapped = more.map(mapTutor);
+      _tutors = _tutors.concat(mapped);
+      _allTutorsFetched = more.length < batchSize;
+      setCachedTutors(_tutors);
+      // Update show more button count silently
+      updateShowMore(_currentList.length > 0 ? _currentList.length : _tutors.length,
+        document.getElementById('tutors-grid') ? document.getElementById('tutors-grid').querySelectorAll('.tutor-card').length : 15);
+    } else {
+      _allTutorsFetched = true;
+    }
+  } catch(e) {
+    console.warn('Background fetch error:', e);
+  }
 }
 
 function logVisit() { sbPost('visits', { page: 'home', visited_at: new Date().toISOString() }); }
@@ -800,7 +860,6 @@ function cleanPhone(phone) {
 // RENDER CARDS
 // ============================================================
 
-
 function renderCard(t) {
   var safePhoto = safePhotoUrl(t.photoUrl);
   var av = safePhoto
@@ -884,15 +943,33 @@ function renderTutors(list) {
   updateShowMore(visible.length, first.length);
 }
 
-function loadMore() {
+async function loadMore() {
   var grid = document.getElementById('tutors-grid');
   var showing = grid.querySelectorAll('.tutor-card').length;
+
+  // If we have more in memory — render them
   var next = _currentList.slice(showing, showing + PAGE_SIZE);
-  if (!next.length) return;
-  grid.insertAdjacentHTML('beforeend', next.map(renderCard).join(''));
-  var newShowing = showing + next.length;
-  updateResultsCount(_currentList.length, newShowing);
-  updateShowMore(_currentList.length, newShowing);
+  if (next.length > 0) {
+    grid.insertAdjacentHTML('beforeend', next.map(renderCard).join(''));
+    var newShowing = showing + next.length;
+    updateResultsCount(_currentList.length, newShowing);
+    updateShowMore(_currentList.length, newShowing);
+    return;
+  }
+
+  // If background fetch is still running — wait and retry
+  if (!_allTutorsFetched) {
+    var btn = document.getElementById('show-more-btn');
+    if (btn) { btn.textContent = 'Loading...'; btn.disabled = true; }
+    await fetchRemainingTutors();
+    if (btn) { btn.disabled = false; }
+    // Re-run filter to include new tutors
+    filterTutors();
+    return;
+  }
+
+  // Nothing more to show
+  updateShowMore(0, 0);
 }
 
 function updateResultsCount(total, showing) {
@@ -956,14 +1033,69 @@ document.addEventListener('click', function(e){
 function onFilterChange(pillId, sel) {
   var pill = document.getElementById(pillId);
   if (sel.value) pill.classList.add('active'); else pill.classList.remove('active');
-  filterTutors();
+  // Do NOT call filterTutors here — only apply when Apply button is clicked
 }
 function clearFilter(selectId, pillId) {
   document.getElementById(selectId).value = '';
   document.getElementById(pillId).classList.remove('active');
-  filterTutors();
+  filterTutors(); // Clear applies immediately
 }
 var SYLLABUS_VALUES = ['CBSE','ICSE','IGCSE','State Syllabus'];
+function toggleFilters() {
+  var panel = document.getElementById('filters-panel');
+  var btn   = document.getElementById('filter-toggle-btn');
+  if (panel.style.display === 'none') {
+    panel.style.display = 'block';
+    btn.style.borderColor = 'rgba(232,98,10,0.4)';
+    btn.style.color = '#E8620A';
+  } else {
+    panel.style.display = 'none';
+    btn.style.borderColor = 'rgba(0,0,0,0.12)';
+    btn.style.color = 'var(--muted)';
+  }
+}
+
+var _activeQuickSubject = '';
+function setQuickSubject(subj) {
+  _activeQuickSubject = subj;
+  // Update active state on buttons
+  document.querySelectorAll('.qs-btn').forEach(function(b) {
+    b.classList.remove('qs-active');
+  });
+  var activeId = subj === '' ? 'qs-all'
+    : subj === 'Mathematics' ? 'qs-maths'
+    : subj === 'Science' ? 'qs-science'
+    : subj === 'English' ? 'qs-english'
+    : subj === 'Physics' ? 'qs-physics'
+    : subj === 'Chemistry' ? 'qs-chem'
+    : subj === 'Biology' ? 'qs-bio'
+    : subj === 'Accountancy' ? 'qs-acc'
+    : subj === 'Computer Science' ? 'qs-cs'
+    : subj === 'Hindi' ? 'qs-hindi' : 'qs-all';
+  var el = document.getElementById(activeId);
+  if (el) el.classList.add('qs-active');
+  // Filter tutors
+  var area = document.getElementById('filter-area').value;
+  var cls  = document.getElementById('filter-class').value;
+  var filtered = _tutors.filter(function(t) {
+    if (!t.active) return false;
+    if (subj) {
+      var allSubjects = (t.subjects||[]);
+      var match = allSubjects.some(function(s) {
+        return s === subj || s.toLowerCase().indexOf(subj.toLowerCase()) !== -1;
+      });
+      if (!match) return false;
+    }
+    if (area) {
+      var tutorAreas = (t.areas && t.areas.length) ? t.areas : (t.area ? [t.area] : []);
+      if (tutorAreas.indexOf(area) === -1) return false;
+    }
+    if (cls && (t.classes||[]).indexOf(cls) === -1) return false;
+    return true;
+  });
+  renderTutors(filtered);
+}
+
 function filterTutors() {
   var subj = document.getElementById('filter-subject').value;
   var area = document.getElementById('filter-area').value;
@@ -1143,10 +1275,6 @@ async function submitReview(tutorId) {
   await sbPost('reviews', { tutor_id: tutorId, reviewer_name: name, review_text: text, rating: _starRating });
   alert('Thank you! Your review will appear after admin approval.');
 }
-
-
-
-
 
 // ============================================================
 // SCROLL REVEAL
