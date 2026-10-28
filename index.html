@@ -58,6 +58,9 @@
   .nav-right { display:flex; align-items:center; gap:20px; }
   .nav-link { color:#475569; text-decoration:none; font-size:14px; font-weight:500; transition:color 0.2s; }
   .nav-link:hover { color:var(--light); }
+  .nav-upsc { display:inline-flex; align-items:center; justify-content:center; padding:10px 17px; border-radius:100px; background:linear-gradient(110deg,#1B1464,#E8620A); color:#fff; font-size:13px; font-weight:700; text-decoration:none; white-space:nowrap; box-shadow:0 4px 14px rgba(27,20,100,.18); transition:transform .2s,box-shadow .2s; }
+  .nav-upsc:hover { transform:translateY(-2px); box-shadow:0 7px 19px rgba(232,98,10,.24); }
+  .nav-upsc .short-label { display:none; }
   .nav-cta {
     background:var(--accent); color:#000; padding:10px 22px;
     border-radius:100px; font-weight:600; font-size:14px;
@@ -345,6 +348,9 @@ background:linear-gradient(160deg,#FDF8F2 0%,#FDF0E0 50%,#FDF8F2 100%);
     /* Nav */
     nav { padding:12px 16px; }
     .nav-link { display:none; }
+    .nav-upsc { padding:9px 11px; font-size:12px; }
+    .nav-upsc .full-label { display:none; }
+    .nav-upsc .short-label { display:inline; }
     .nav-right { gap:8px; }
     .nav-cta { padding:9px 14px; font-size:13px; white-space:nowrap; }
     .nav-tutor-login { padding:9px 14px; font-size:13px; white-space:nowrap; }
@@ -398,7 +404,10 @@ background:linear-gradient(160deg,#FDF8F2 0%,#FDF0E0 50%,#FDF8F2 100%);
   @media(max-width:480px) {
     /* Filters — full width each on very small screens */
     .filters-row { grid-template-columns:1fr; }
-    .nav-cta { font-size:12px; padding:8px 11px; }
+    .nav-cta { font-size:11px; padding:8px 9px; }
+    .nav-upsc { font-size:11px; padding:8px 9px; }
+    .nav-right { gap:5px; }
+    nav { padding:12px 10px; }
     .nav-tutor-login { font-size:12px; padding:8px 11px; }
     .logo { font-size:22px; }
   }
@@ -410,6 +419,7 @@ background:linear-gradient(160deg,#FDF8F2 0%,#FDF0E0 50%,#FDF8F2 100%);
   <div class="logo">Guru<span>vio</span></div>
   <div class="nav-right">
     <a href="#how" class="nav-link">How it Works</a>
+    <a href="content-services.html" class="nav-upsc" aria-label="Academic Services"><span class="full-label">✦ Academic Services</span><span class="short-label">✦ Academic</span></a>
     <a href="tutor-register.html" class="nav-cta">List Your Tutor Profile</a>
   </div>
 </nav>
@@ -598,6 +608,7 @@ background:linear-gradient(160deg,#FDF8F2 0%,#FDF0E0 50%,#FDF8F2 100%);
     <a href="#">About</a>
     <a href="#" onclick="openContactModal();return false;">Contact</a>
     <a href="tutor-register.html">For Tutors</a>
+    <a href="content-services.html">Academic Services</a>
     <a href="terms.html">Terms &amp; Conditions</a>
   </div>
 </footer>
